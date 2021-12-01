@@ -60,7 +60,7 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SecureStorage\SecureStorage.csproj" />
+    <ProjectReference Include="..\Secure-Storage\SecureStorage\SecureStorage.csproj" />
     <ProjectReference Include="..\TelegraphChannel\CommunicationChannel.csproj" />
   </ItemGroup>
   <ItemGroup>

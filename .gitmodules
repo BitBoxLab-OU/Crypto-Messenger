@@ -1,0 +1,3 @@
+[submodule "Secure-Storage"]
+	path = Secure-Storage
+	url = https://github.com/BitBoxLab-OU/Secure-Storage.git
