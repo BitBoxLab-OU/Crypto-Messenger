@@ -98,9 +98,9 @@ namespace EncryptedMessaging
 
 		private List<Contact> SortContacts(List<Contact> contacts) => contacts.OrderByDescending(o => o.LastMessageTime).ToList();
 
-		internal void LoadContacts()
+		internal void LoadContacts(bool onlyServer = false)
 		{
-			if (!_context.My.IsServer)
+			if (!_context.My.IsServer && !onlyServer)
 			{
 				RefreshSuspend = true;
 				// _context.SecureStorage.ObjectStorage.DeleteAllObject(typeof(Contact));
@@ -220,6 +220,18 @@ namespace EncryptedMessaging
 				action.Invoke(contact);
 		}
 
+		/// <summary>
+		/// Delegate for the event that is triggered when a contact is added
+		/// </summary>
+		/// <param name="sender">The calling class</param>
+		/// <param name="contact">The new contact added</param>
+		public delegate void OnContactAddedHandler(object sender, Contact contact);
+
+		/// <summary>
+		/// Event that is triggered when new contacts are added
+		/// </summary>
+		public event OnContactAddedHandler OnContactAdded;
+
 
 		/// <summary>
 		/// Add a new contact and send it if necessary
@@ -245,6 +257,7 @@ namespace EncryptedMessaging
 				}
 				var backUpMyContact = !contact.IsServer && contact.IsVisible && ContactsList.Count == 0; // The first time I add a contact, I make my first cloud backup. It is not backed up first to save space for test accounts
 				ContactsList.Add(contact);
+				OnContactAdded?.Invoke(this, contact);
 				if (backUpMyContact)
 					_context.My.BackupToCloud();
 			}
@@ -285,6 +298,7 @@ namespace EncryptedMessaging
 			}
 			return true;
 		}
+
 		public enum SendMyContact
 		{
 			None,

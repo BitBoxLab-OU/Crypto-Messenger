@@ -9,7 +9,7 @@
     <OldToolsVersion>2.0</OldToolsVersion>
     <Configurations>DEBUG_A;DEBUG_B;Debug;DEBUG_ALI;DEBUG_MUS;DEBUG_FAI;DEBUG_ZUB;DEBUG_AND;DEBUG_RAM;rDebug;Release</Configurations>
     <NeutralLanguage>en</NeutralLanguage>
-    <DebugType>none</DebugType>
+    <DebugType>portable</DebugType>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_A|AnyCPU'">
@@ -60,7 +60,7 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SecureStorage\SecureStorage.csproj" />
+    <ProjectReference Include="..\..\SecureStorage\SecureStorage.csproj" />
     <ProjectReference Include="..\TelegraphChannel\CommunicationChannel.csproj" />
   </ItemGroup>
   <ItemGroup>

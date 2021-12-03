@@ -86,32 +86,32 @@ namespace EncryptedMessaging
             return output;
         }
         /// <summary>
-        /// Read the commands and parameters sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, short, short, bool, bool, byte[][])"/>
+        /// Read the commands and parameters sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, ushort, ushort, bool, bool, byte[][])"/>
         /// </summary>
         /// <param name="appId">Sub application Id (plugin Id)</param>
         /// <param name="command">Id of the command used in the protocol of the sub application</param>
         /// <returns>Parameters</returns>
-        public List<byte[]> GetSubApplicationParameters(out short appId, out short command)
+        public List<byte[]> GetSubApplicationParameters(out ushort appId, out ushort command)
         {
             var data = GetSubApplicationData(out appId, out command);
             return Functions.SplitData(data, false);
         }
         /// <summary>
-        /// Read the commands and data sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, short, short, bool, bool, byte[])"/>
+        /// Read the commands and data sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, ushort, ushort, bool, bool, byte[])"/>
         /// </summary>
         /// <param name="appId">Sub application Id (plugin Id)</param>
         /// <param name="command">Id of the command used in the protocol of the sub application</param>
         /// <exception cref="ArgumentException"></exception>
         /// <returns>Data</returns>
-        public byte[] GetSubApplicationData(out short appId, out short command)
+        public byte[] GetSubApplicationData(out ushort appId, out ushort command)
         {
             if (Type != MessageFormat.MessageType.SubApplication)
             {
                 TypeNotValidError();
             }
             var messageData = GetData();
-            appId = BitConverter.ToInt16(messageData, messageData.Length - 4);
-            command = BitConverter.ToInt16(messageData, messageData.Length - 2);
+            appId = BitConverter.ToUInt16(messageData, messageData.Length - 4);
+            command = BitConverter.ToUInt16(messageData, messageData.Length - 2);
             var data = new byte[messageData.Length - 4];
             Array.Copy(messageData, 0, data, 0, data.Length);
             return data;
