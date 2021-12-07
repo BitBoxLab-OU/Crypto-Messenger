@@ -10,12 +10,15 @@ namespace EncryptedMessaging
 {
     public class Messaging
     {
-        public Messaging(Context context, ViewMessageUi viewMessage, OnMessageArrived onNotification, bool multipleChatModes)
+        /// <summary>
+        /// Class initializer (prepares for use)
+        /// </summary>
+        /// <param name="context">Context</param>
+        /// <param name="multipleChatModes">If false, one messaging chat will be handled at a time</param>
+        public Messaging(Context context, bool multipleChatModes)
         {
             MultipleChatModes = multipleChatModes;
             Context = context;
-            ViewMessage = viewMessage;
-            SetNotification(onNotification);
         }
         internal Context Context;
         internal bool MultipleChatModes { get; private set; }
@@ -53,56 +56,20 @@ namespace EncryptedMessaging
             }
         }
 
-        public delegate void OnMessageArrived(Message message);
-
-        /// <summary>
-        /// Enable notifications: You have to make sure to call this function every time the application starts or when it runs in the background as a service.
-        /// When a message arrives, it is automatically saved, and the onNotification action is performed. It is therefore necessary to set onNotification with the code necessary to display a notification on the device to notify that a new message has arrived.
-        /// </summary>
-        /// <param name="onNotification">This event occurs whenever a notification arrives. The first parameter (ulong) is the chatId of origin of the message and the second (byte[]) the data. To read the data, use the function EncryptedMessaging.MessageFormat.ReadDataPost(...)</param>
-        internal void SetNotification(OnMessageArrived onNotification)
-        {
-#if DEBUG || DEBUG_A || DEBUG_B
-            //if (Channell.ServerUri == null)
-            //{
-            //	//Before using this function, you must initialize the library: EncryptedMessaging.Functions.Initialize(entryPoint, networkName)
-            //	System.Diagnostics.Debugger.Break();
-            //	return;
-            //}
-            if (_pushNotificationIsActivated)
-            {
-                //There is something wrong! Do not call this function if it is already active!
-                Debugger.Break();
-                return;
-            }
-            _pushNotificationIsActivated = true;
-#endif
-            _onNotification = onNotification;
-            //CommandsForServer.Connect(GetMyId());
-        }
-
-        private bool _pushNotificationIsActivated;
-
-        private OnMessageArrived _onNotification;
         internal void ExecuteOnDataArrival(ulong chatId, byte[] data)
         {
             var myId = Context.My.GetId();
             var receptionTime = DateTime.UtcNow;
             if (Context.MessageFormat.ReadDataPost(data, chatId, receptionTime, out var message, true))
             {
+                var isViewable = MessageDescription.ContainsKey(message.Type);
                 if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
                     action.Invoke(message); // Raise an event for plugins listening for binary data
 
                 if (!message.Encrypted) // Incoming messages without encryption are ignored
                 {
                     // Only the server can process non-encrypted messages for particular purposes, for example when you want to receive communication from a client not in the contacts directory, or when the data is already encrypted and does not require further encryption
-                    if (!Context.IsServer) return;
-                    if (message.Type != MessageType.SmallData && message.Type != MessageType.Data)
-                    {
-                        if (message.Type == MessageType.Binary)
-                            ExecuteEvent(message);
-                    }
-                    else
+                    if (!Context.IsServer && !isViewable) return;
                         ExecuteCommand(chatId, message);
                 }
                 else // Only encrypted messages are taken into consideration, they have been validated by verifying the digital signature
@@ -110,13 +77,12 @@ namespace EncryptedMessaging
                     if (!message.Contact.IsBlocked || message.Type == MessageType.ContactStatus)
                     {
                         message.Contact.ExtendSessionTimeout();
-                        var isViewable = MessageDescription.ContainsKey(message.Type);
                         if (isViewable || message.Type == MessageType.LastReading)
                         {
                             Context.Repository.AddPost(data, chatId, ref receptionTime);
                             if (isViewable)
                             {
-                                _onNotification(message);
+                                Context.OnNotification?.Invoke(message);
                                 if (CurrentChatRoom != message.Contact)
                                     message.Contact.SetUnreadMessages(message.Contact.UnreadMessages + 1, true);
                                 if (MultipleChatModes || CurrentChatRoom == message.Contact)
@@ -125,10 +91,8 @@ namespace EncryptedMessaging
                                 message.Contact.RaiseEventLastMessageChanged(message);
                             }
                         }
-                        else
-                        {
+                        if (!isViewable)
                             ExecuteCommand(chatId, message);
-                        }
                         UpdateReaded(message);
                     }
                     else
@@ -139,7 +103,7 @@ namespace EncryptedMessaging
             }
         }
 
-        private void ExecuteEvent(Message message)
+        private void InvokeOnContactEvent(Message message)
         {
             if (Context.IsServer)
                 Context.OnContactEvent?.Invoke(message);
@@ -152,16 +116,10 @@ namespace EncryptedMessaging
             if (message.Type == MessageType.Delete)
             {
                 Context.Repository.DeletePostByPostId(Converter.BytesToUlong(message.Data), chatId);
-                ExecuteEvent(message);
             }
             else if (message.Type == MessageType.SmallData || message.Type == MessageType.Data)
             {
                 Cloud.ReceiveCloudCommands.OnCommand(Context, message);
-                ExecuteEvent(message);
-            }
-            else if (message.Type == MessageType.Binary)
-            {
-                ExecuteEvent(message);
             }
             else if (message.Type == MessageType.NameChange)
             {
@@ -177,6 +135,7 @@ namespace EncryptedMessaging
                 if (informType == InformType.AvatarHasUpdated)
                     message.Contact.RequestAvatarUpdate();
             }
+            InvokeOnContactEvent(message);
         }
 
 
@@ -201,13 +160,14 @@ namespace EncryptedMessaging
         /// Add a post on the chat page.
         /// </summary>
         /// <param name="message">the message to show</param>
+        /// <param name="isMy">He has to render my message</param>
         private void ShowMessage(Message message, bool isMy)
         {
 
             // Update the empirical value of unread messages from the contact (value to be included in notifications)
             if (isMy)
                 message.Contact.RemoteUnreaded++;
-            ViewMessage.Invoke(message, isMy);
+            Context.ViewMessage?.Invoke(message, isMy);
         }
 
         private void UpdateReaded(Message message)
@@ -227,12 +187,6 @@ namespace EncryptedMessaging
             if (!isMy)
                 message.Contact.RemoteUnreaded = 0;
         }
-
-        /// <summary>
-        /// It is the function delegate who writes a message in the chat. This function must be set when the App() class is initialized in the common project.
-        /// </summary>
-        internal ViewMessageUi ViewMessage;
-        public delegate void ViewMessageUi(Message message, bool isMyMessage);
 
         /// <summary>
         /// Send the message to all participants in the current chat room, and save a copy of the local storage

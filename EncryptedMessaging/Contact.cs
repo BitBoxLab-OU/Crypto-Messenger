@@ -127,7 +127,7 @@ namespace EncryptedMessaging
             iOS,
             Windows,
             UWP,
-            Linux,
+            Unix,
             Mac
         }
         public string Pseudonym() => Context.Contacts.Pseudonym(Participants);
@@ -307,7 +307,7 @@ namespace EncryptedMessaging
                 if (dateTime > readed.DateTime)
                 {
                     readed.DateTime = dateTime;
-                    Context.InvokeOnMainThread(() => Context.Contacts.OnLastReadedTimeChange(this, readed.IdParticipant, readed.DateTime));
+                    Context.InvokeOnMainThread(() => Context.OnLastReadedTimeChange(this, readed.IdParticipant, readed.DateTime));
                     Save();
                 }
             }
@@ -334,7 +334,7 @@ namespace EncryptedMessaging
                     // This task with the delay is not necessary, it is only to simulate 3 seconds for the message sending confirmation
                     // Thread.Sleep(3000);
                     // Context.InvokeOnMainThread(() => Context.Contacts.OnMessageDelivered?.Invoke(this, new DateTime(lastMessageSent.Creation), false ));
-                    Context.Contacts.OnMessageDelivered?.Invoke(this, new DateTime(lastMessageSent.Creation), false);
+                    Context.OnMessageDelivered?.Invoke(this, new DateTime(lastMessageSent.Creation), false);
                 }).Start();
                 LastMessageDelivered = lastMessageSent;
                 LastMessageSent = null;
@@ -517,7 +517,7 @@ namespace EncryptedMessaging
         internal void RefreshReadedInfoInUI()
         {
             foreach (var readed in RemoteReadedList)
-                Context.Contacts.OnLastReadedTimeChange(this, readed.IdParticipant, readed.DateTime);
+                Context.OnLastReadedTimeChange(this, readed.IdParticipant, readed.DateTime);
         }
         internal void Delete()
         {

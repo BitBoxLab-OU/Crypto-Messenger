@@ -430,9 +430,8 @@ namespace EncryptedMessaging.Cloud
         /// <summary>
         /// This event is automatically executed when a command is received from another client. You can receive its request (Get) and data entry (Post) commands
         /// </summary>
-        /// <param name="type">Command type</param>
-        /// <param name="fromContact">The client contact who created the command</param>
-        /// <param name="data">The data contained in the command</param>
+        /// <param name="context">Command type</param>
+        /// <param name="message">The client contact who created the command</param>
         internal static void OnCommand(Context context, Message message)
         {
             if (message.Type == MessageType.SmallData || message.Type == MessageType.Data)

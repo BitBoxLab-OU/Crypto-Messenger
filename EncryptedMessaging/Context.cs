@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,36 +22,54 @@ namespace EncryptedMessaging
         /// You can join the network as a node, and contribute to decentralization, or hook yourself to the network as an external user.
         /// To create a node, set the MyAddress parameter with your web address.If MyAddress is not set then you are an external user.
         /// </summary>
-        /// <param name="invokeOnMainThread"></param>
-        /// <param name="viewMessage">It is the function delegate who writes a message in the chat</param>
-        /// <param name="onContactEvent"></param>
-        /// <param name="onNotification">This event occurs whenever a notification arrives. The first parameter (ulong) is the chatId of origin of the message and the second (byte[]) the data. To read the data, use the function EncryptedMessaging.MessageFormat.ReadDataPost(...)</param>
-        /// <param name="internetAccess">True if network is available</param>
         /// <param name="entryPoint">The entry point server, to access the network</param>
         /// <param name="networkName">The name of the infrastructure. For tests we recommend using "testnet"</param>
-        /// <param name="runtimePlatform"></param>
         /// <param name="multipleChatModes">If this mode is enabled there will be multiple chat rooms simultaneously, all archived messages will be preloaded with the initialization of this library, this involves a large use of memory but a better user experience. Otherwise, only one char room will be managed at a time, archived messages will be loaded only when you enter the chat, this mode consumes less memory.</param>
-        /// <param name="onLastReadedTimeChange"></param>
-        /// <param name="onMessageDelivered">Event that occurs when a message has been sent</param>
         /// <param name="privateKeyOrPassphrase"></param>
         /// <param name="isServer"></param>
-        /// <param name="CloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
+        /// <param name="internetAccess">True if network is available</param>
+        /// <param name="invokeOnMainThread">Method that starts the main thread: Actions that have consequences with updating the user interface must run on the main thread otherwise they cause a crash</param>
         /// <param name="getSecureKeyValue">System secure function to read passwords and keys saved with the corresponding set function</param>
         /// <param name="setSecureKeyValue">System secure function for saving passwords and keys</param>
-        public Context(Action<Action> invokeOnMainThread, Messaging.ViewMessageUi viewMessage, Action<Message> onContactEvent, Messaging.OnMessageArrived onNotification, Action<Contact, ulong, DateTime> onLastReadedTimeChange, Action<Contact, DateTime, bool> onMessageDelivered, bool internetAccess, string entryPoint, string networkName = "testnet", Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined, bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, string CloudPath = null)
+        /// <param name="CloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
+        /// <param name="runtimePlatform">The host operating system. If this value is not specified then it will be detected automatically (experimental)</param>
+        public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null,  string CloudPath = null, Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined)
         {
-            _internetAccess = internetAccess;
+            _internetAccess = internetAccess ?? NetworkInterface.GetIsNetworkAvailable();
 #if DEBUG
             if (CloudPath != null && !isServer)
                 System.Diagnostics.Debugger.Break(); // Set up cloud path functions for server applications only
 #endif
             Cloud.ReceiveCloudCommands.SetCustomPath(CloudPath, isServer);
             PingAddress = new UriBuilder(entryPoint).Uri;
+            if (runtimePlatform == Contact.RuntimePlatform.Undefined)
+            {
+                var platform = Environment.OSVersion.Platform;
+                if (platform == PlatformID.Win32Windows || platform == PlatformID.Win32NT || platform == PlatformID.WinCE || platform == PlatformID.Xbox)
+                {
+                    runtimePlatform = Contact.RuntimePlatform.Windows;
+                }
+                else if (platform == PlatformID.Unix || platform == PlatformID.MacOSX)
+                {
+                    //if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+                    //{
+                    //    // Do something
+                    //}
+                    var ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties().ToString().ToLower();
+                    if (ipGlobalProperties.Contains(".android"))
+                        runtimePlatform = Contact.RuntimePlatform.Android;
+                    else if (ipGlobalProperties.Contains(".ios")) // !!!!!!!!!!!!!!!!! ATTENTION!! VERIFY IN iOS !!!!!!!!!!!!!!!!!!!!!!
+                        runtimePlatform = Contact.RuntimePlatform.iOS;
+                    else
+                        runtimePlatform = Contact.RuntimePlatform.Unix;
+                }
+            }
+
             RuntimePlatform = runtimePlatform;
             IsServer = isServer;
             SessionTimeout = isServer ? DefaultServerSessionTimeout : Timeout.InfiniteTimeSpan;
             Domain = Converter.BytesToInt(Encoding.ASCII.GetBytes(networkName));
-            InvokeOnMainThread = invokeOnMainThread ?? ((Action action) => action.Invoke());
+            InvokeOnMainThread = invokeOnMainThread ?? ThreadSafeCalls;
             MessageFormat = new MessageFormat(this);
             SecureStorage = new SecureStorage.Initializer(Instances.ToString(), getSecureKeyValue, setSecureKeyValue);
             Storage = new Storage(this);
@@ -67,9 +86,8 @@ namespace EncryptedMessaging
 #endif
             if (!string.IsNullOrEmpty(privateKeyOrPassphrase))
                 My.SetPrivateKey(privateKeyOrPassphrase);
-            Messaging = new Messaging(this, viewMessage, onNotification, multipleChatModes);
-            Contacts = new Contacts(this, onLastReadedTimeChange, onMessageDelivered);
-            OnContactEvent = onContactEvent;
+            Messaging = new Messaging(this, multipleChatModes);
+            Contacts = new Contacts(this);
             var keepConnected = runtimePlatform != Contact.RuntimePlatform.Android && runtimePlatform != Contact.RuntimePlatform.iOS;
             Channell = new Channell(entryPoint, Domain, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
 
@@ -84,6 +102,67 @@ namespace EncryptedMessaging
 
             //var afterInstanceCreate = new Thread((obj) => RunAfterInstanceCreate(obj)) { IsBackground = true };                    
             //afterInstanceCreate.Start(null);
+        }
+        /// <summary>
+        /// Delegate for the action to be taken when messages arrive
+        /// </summary>
+        /// <param name="message">Message</param>
+        public delegate void OnMessageArrived(Message message);
+        /// <summary>
+        /// Delegate that runs automatically when messages are received. On systems that have a stable connection (server or desktop), this event can be used to generate notifications.
+        /// Note: Only messages that have viewable content in the chat trigger this method
+        /// </summary>
+        public OnMessageArrived OnNotification;
+        /// <summary>
+        /// Function delegated with the method that creates the message visible in the user interface. This function will then be called whenever a message needs to be drawn in the chat. Server-type host systems that don't have messages to render in chat probably don't need to set this action
+        /// </summary>
+        /// <param name="message">The message to render in the chat view</param>
+        /// <param name="isMyMessage">True if you call it to render my message</param>
+        public delegate void ViewMessageUi(Message message, bool isMyMessage);
+        /// <summary>
+        /// It is the function delegate who writes a message in the chat. This function must be set when the App() class is initialized in the common project.
+        /// </summary>
+        public ViewMessageUi ViewMessage;
+        /// <summary>
+        /// This delegate allows you to set up a method that will be called whenever a system message arrives. Messages that have a graphical display in the chat do not trigger this event.
+        /// Use OnMessageArrived to intercept incoming messages that have a content display in the chat
+        /// </summary>
+        public Action<Message> OnContactEvent;
+
+        /// <summary>
+        /// Event that is raised to inform when someone has read a sent message
+        /// </summary>
+        /// <param name="contact">Contact (group or single user))</param>
+        /// <param name="participantId">ID of participant who has read</param>
+        /// <param name="lastRadTime">When the last reading took place</param>
+        public delegate void LastReadedTimeChangeEvent(Contact contact, ulong participantId, DateTime lastRadTime);
+        /// <summary>
+        /// Method that is performed when a contact reads a message that has been sent
+        /// </summary>              
+        public LastReadedTimeChangeEvent OnLastReadedTimeChange;
+
+        /// <summary>
+        /// Delegate for the event that notifies when messages are sent
+        /// </summary>
+        /// <param name="contact"></param>
+        /// <param name="deliveredTime"></param>
+        /// <param name="isMy"></param>
+        public delegate void MessageDeliveredEvent(Contact contact, DateTime deliveredTime, bool isMy);
+        /// <summary>
+        /// Event that occurs when a message has been sent
+        /// </summary>
+        public MessageDeliveredEvent OnMessageDelivered;
+
+        /// <summary>
+        /// thread-safe calls
+        /// https://docs.microsoft.com/en-us/dotnet/desktop/winforms/controls/how-to-make-thread-safe-calls?view=netdesktop-6.0
+        /// </summary>
+        /// <param name="action"></param>
+        private void ThreadSafeCalls(Action action)
+        {
+            var threadParameters = new ThreadStart(delegate { action.Invoke(); });
+            var thread2 = new Thread(threadParameters);
+            thread2.Start();
         }
 
 #if DEBUG_A
@@ -103,7 +182,14 @@ namespace EncryptedMessaging
                 Contacts.RestoreContactFromCloud();
             OnConnectivityChange(_internetAccess);
             IsReady = true;
+            OnContextIsInitialized?.Invoke(this);
         }
+
+        /// <summary>
+        /// Function that is called when the context has been fully initialized.
+        /// If you want to automate something after context initialization, you can do so by assigning an action to this value!
+        /// </summary>
+        public static Action<Context> OnContextIsInitialized;
 
         public bool IsReady { get; private set; }
 
@@ -116,6 +202,11 @@ namespace EncryptedMessaging
             get { return _internetAccess; }
         }
         internal static Uri PingAddress;
+        /// <summary>
+        /// Function that must be called whenever the host system has a change of state on the connection. This parameter must be set when starting the application.
+        /// If it is not set, the libraries do not know if there are changes in the state of the internet connection, and the messages could remain in the queue without being sent.
+        /// </summary>
+        /// <param name="Connectivity"></param>
         public static void OnConnectivityChange(bool Connectivity)
         {
             _internetAccess = Connectivity;
@@ -134,7 +225,7 @@ namespace EncryptedMessaging
         public bool IsServer { get; }
         internal static readonly TimeSpan DefaultServerSessionTimeout = new TimeSpan(0, 20, 0);
         public TimeSpan SessionTimeout;
-        internal Action<Message> OnContactEvent;
+
         public My My;
         public Contacts Contacts;
         public delegate void AlertMessage(string text);

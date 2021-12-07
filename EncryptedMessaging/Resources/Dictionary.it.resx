@@ -141,11 +141,11 @@
   <data name="Delete" xml:space="preserve">
     <value>Elimina</value>
   </data>
-  <data name="Save" xml:space="preserve">
-    <value>Salva</value>
-  </data>
   <data name="Send" xml:space="preserve">
     <value>Spedire</value>
+  </data>
+  <data name="JustNow" xml:space="preserve">
+    <value>Proprio adesso</value>
   </data>
   <data name="NewContact" xml:space="preserve">
     <value>Nuovo contatto</value>
@@ -156,6 +156,9 @@
   <data name="AudioCall" xml:space="preserve">
     <value>Chiamata audio</value>
   </data>
+  <data name="TextMessage" xml:space="preserve">
+    <value>Messaggio testuale</value>
+  </data>
   <data name="Ago" xml:space="preserve">
     <value>fa</value>
   </data>
@@ -164,9 +167,6 @@
   </data>
   <data name="Document" xml:space="preserve">
     <value>Documento</value>
-  </data>
-  <data name="JustNow" xml:space="preserve">
-    <value>Proprio adesso</value>
   </data>
   <data name="PublicKey" xml:space="preserve">
     <value>Chiave pubblica</value>
@@ -225,14 +225,17 @@
   <data name="Audio" xml:space="preserve">
     <value>audio</value>
   </data>
+  <data name="EncryptedSharedContent" xml:space="preserve">
+    <value>Contenuto condiviso criptato</value>
+  </data>
   <data name="MessageDeleted" xml:space="preserve">
     <value>Messaggio cancellato</value>
   </data>
   <data name="CreateAccount" xml:space="preserve">
     <value>Crea un nuovo account</value>
   </data>
-  <data name="TextMessage" xml:space="preserve">
-    <value>Messaggio testuale</value>
+  <data name="Save" xml:space="preserve">
+    <value>Salva</value>
   </data>
   <data name="Position" xml:space="preserve">
     <value>Posizione</value>
@@ -246,11 +249,11 @@
   <data name="ShowPassphrase" xml:space="preserve">
     <value>Mostra passphrase</value>
   </data>
-  <data name="Edit" xml:space="preserve">
-    <value>Modificare</value>
-  </data>
   <data name="Hours" xml:space="preserve">
     <value>ore</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Modificare</value>
   </data>
   <data name="Contact" xml:space="preserve">
     <value>Contatto</value>
@@ -264,7 +267,10 @@
   <data name="Data" xml:space="preserve">
     <value>dati</value>
   </data>
-  <data name="EncryptedSharedContent" xml:space="preserve">
-    <value>Contenuto condiviso criptato</value>
+  <data name="CallEnded" xml:space="preserve">
+    <value>Chiamata terminata</value>
+  </data>
+  <data name="CallDeclined" xml:space="preserve">
+    <value>Chiamata rifiutata</value>
   </data>
 </root>

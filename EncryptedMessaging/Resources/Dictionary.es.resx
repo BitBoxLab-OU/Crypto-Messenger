@@ -141,8 +141,14 @@
   <data name="Delete" xml:space="preserve">
     <value>Borrar</value>
   </data>
+  <data name="Save" xml:space="preserve">
+    <value>Ahorrar</value>
+  </data>
   <data name="Send" xml:space="preserve">
     <value>Enviar</value>
+  </data>
+  <data name="JustNow" xml:space="preserve">
+    <value>En este momento</value>
   </data>
   <data name="NewContact" xml:space="preserve">
     <value>Nuevo contacto</value>
@@ -153,9 +159,6 @@
   <data name="AudioCall" xml:space="preserve">
     <value>Llamada de audio</value>
   </data>
-  <data name="TextMessage" xml:space="preserve">
-    <value>Mensaje de texto</value>
-  </data>
   <data name="Ago" xml:space="preserve">
     <value>atrás</value>
   </data>
@@ -164,9 +167,6 @@
   </data>
   <data name="Document" xml:space="preserve">
     <value>Documento</value>
-  </data>
-  <data name="JustNow" xml:space="preserve">
-    <value>En este momento</value>
   </data>
   <data name="PublicKey" xml:space="preserve">
     <value>Llave pública</value>
@@ -231,8 +231,8 @@
   <data name="CreateAccount" xml:space="preserve">
     <value>Crear una nueva cuenta</value>
   </data>
-  <data name="Save" xml:space="preserve">
-    <value>Ahorrar</value>
+  <data name="TextMessage" xml:space="preserve">
+    <value>Mensaje de texto</value>
   </data>
   <data name="Position" xml:space="preserve">
     <value>Posición</value>
@@ -246,11 +246,11 @@
   <data name="ShowPassphrase" xml:space="preserve">
     <value>Mostrar frase de contraseña</value>
   </data>
-  <data name="Hours" xml:space="preserve">
-    <value>horas</value>
-  </data>
   <data name="Edit" xml:space="preserve">
     <value>Editar</value>
+  </data>
+  <data name="Hours" xml:space="preserve">
+    <value>horas</value>
   </data>
   <data name="Contact" xml:space="preserve">
     <value>Contacto</value>
@@ -263,5 +263,14 @@
   </data>
   <data name="Data" xml:space="preserve">
     <value>datos</value>
+  </data>
+  <data name="CallEnded" xml:space="preserve">
+    <value>Llamada terminada</value>
+  </data>
+  <data name="CallDeclined" xml:space="preserve">
+    <value>Llamada rechazada</value>
+  </data>
+  <data name="EncryptedSharedContent" xml:space="preserve">
+    <value>Contenido compartido cifrado</value>
   </data>
 </root>

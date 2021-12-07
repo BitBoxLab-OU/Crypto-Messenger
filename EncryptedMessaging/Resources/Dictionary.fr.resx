@@ -141,8 +141,14 @@
   <data name="Delete" xml:space="preserve">
     <value>Effacer</value>
   </data>
+  <data name="Save" xml:space="preserve">
+    <value>Sauvegarder</value>
+  </data>
   <data name="Send" xml:space="preserve">
     <value>Envoyer</value>
+  </data>
+  <data name="JustNow" xml:space="preserve">
+    <value>Juste maintenant</value>
   </data>
   <data name="NewContact" xml:space="preserve">
     <value>Nouveau contact</value>
@@ -153,9 +159,6 @@
   <data name="AudioCall" xml:space="preserve">
     <value>Appel audio</value>
   </data>
-  <data name="TextMessage" xml:space="preserve">
-    <value>Message texte</value>
-  </data>
   <data name="Ago" xml:space="preserve">
     <value>depuis</value>
   </data>
@@ -164,9 +167,6 @@
   </data>
   <data name="Document" xml:space="preserve">
     <value>Document</value>
-  </data>
-  <data name="JustNow" xml:space="preserve">
-    <value>Juste maintenant</value>
   </data>
   <data name="PublicKey" xml:space="preserve">
     <value>Clé publique</value>
@@ -231,8 +231,8 @@
   <data name="CreateAccount" xml:space="preserve">
     <value>Créer un nouveau compte</value>
   </data>
-  <data name="Save" xml:space="preserve">
-    <value>Sauvegarder</value>
+  <data name="TextMessage" xml:space="preserve">
+    <value>Message texte</value>
   </data>
   <data name="Position" xml:space="preserve">
     <value>Position</value>
@@ -246,11 +246,11 @@
   <data name="ShowPassphrase" xml:space="preserve">
     <value>Afficher la phrase secrète</value>
   </data>
-  <data name="Hours" xml:space="preserve">
-    <value>les heures</value>
-  </data>
   <data name="Edit" xml:space="preserve">
     <value>Éditer</value>
+  </data>
+  <data name="Hours" xml:space="preserve">
+    <value>les heures</value>
   </data>
   <data name="Contact" xml:space="preserve">
     <value>Contact</value>
@@ -263,5 +263,14 @@
   </data>
   <data name="Data" xml:space="preserve">
     <value>les données</value>
+  </data>
+  <data name="CallEnded" xml:space="preserve">
+    <value>Appel terminé</value>
+  </data>
+  <data name="CallDeclined" xml:space="preserve">
+    <value>Appel refusé</value>
+  </data>
+  <data name="EncryptedSharedContent" xml:space="preserve">
+    <value>Contenu partagé crypté</value>
   </data>
 </root>
