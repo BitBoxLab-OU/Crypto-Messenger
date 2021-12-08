@@ -114,7 +114,7 @@ namespace EncryptedMessaging
                 {
                     contact.ReadPosts();
                     foreach (var readed in contact.RemoteReadedList)
-                        Context.InvokeOnMainThread(() => Context?.OnLastReadedTimeChange(contact, readed.IdParticipant, readed.DateTime));
+                        Context.InvokeOnMainThread(() => Context.OnLastReadedTimeChangeInvoke(contact, readed.IdParticipant, readed.DateTime));
                 });
 
                 RefreshSuspend = false;

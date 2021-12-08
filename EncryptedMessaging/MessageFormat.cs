@@ -15,15 +15,24 @@ namespace EncryptedMessaging
         {
             Context = context;
             Contact = contact;
-            Type = type;
             Author = author;
             Creation = creation;
             ReceptionTime = receptionTime;
-            Data = data;
             PostId = postId;
             Encrypted = encrypted;
             ChatId = chatId;
             AuthorId = authorId;
+            if (type == MessageFormat.MessageType.ReplyToMessage)
+            {
+                Type = (MessageFormat.MessageType)data[0];
+                ReplyToPostId = BitConverter.ToUInt64(data, 1);
+                Data = data.Skip(9);
+            }
+            else
+            {
+                Type = type;
+                Data = data;
+            }
         }
         public Context Context;
         /// <summary>
@@ -54,6 +63,10 @@ namespace EncryptedMessaging
         public DateTime Creation { get; internal set; }
         public DateTime ReceptionTime { get; internal set; }
         internal byte[] Data;
+        /// <summary>
+        /// If different from null it indicates that this is a reply post previously sent in the group that the contact represents 
+        /// </summary>
+        public readonly ulong? ReplyToPostId;
         /// <summary>
         /// Unique identifier that indicates the message in a chat. Use this property in all contexts where you need to identify a message, for example, when replying to a specific message, you are referring to the message with the ID of the message you want to reply to.
         /// </summary>
@@ -115,22 +128,6 @@ namespace EncryptedMessaging
             var data = new byte[messageData.Length - 4];
             Array.Copy(messageData, 0, data, 0, data.Length);
             return data;
-        }
-
-        /// <summary>
-        /// Use this method to read a reply message. Reply messages are sent via <see cref="Messaging.ReplyToMessage(Contact, ulong, string)"/>
-        /// </summary>
-        /// <param name="replyToPostId">This is the reply to the postId returned with this parameter. The post Id is the id to a previously sent message.</param>
-        /// <returns>The reply to the message postId created by whoever sent this message</returns>
-        public string GetReplyToMessage(out ulong replyToPostId)
-        {
-            if (Type != MessageFormat.MessageType.ReplyToMessage)
-            {
-                TypeNotValidError();
-            }
-            var data = GetData();
-            replyToPostId = BitConverter.ToUInt64(data, 0);
-            return System.Text.Encoding.Unicode.GetString(data.Skip(8));
         }
 
         /// <summary>
@@ -213,7 +210,7 @@ namespace EncryptedMessaging
         private Context _context;
 
 
-        public enum MessageType
+        public enum MessageType : byte
         {
             // NOTE: If you add a new type and want to make it visible also in the messages view, then you must also add its description in the _messageDescription function 
             Text,
@@ -457,11 +454,12 @@ namespace EncryptedMessaging
         /// <param name="data">Message data</param>
         /// <param name="participants">Public keys of each participant</param>
         /// <param name="creationDate">Return current time GTM</param>
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
         /// <param name="encrypted">if you need to send a message to someone who does not have the sender's contact in the address book, or the data is already encrypted, it is possible with this parameter to delete the encryption. Users are not allowed to receive unencrypted messages, this function is specific for messages to servers or cloud systems</param>		
         /// <returns>Data post</returns>
-        public byte[] CreateDataPost(MessageType type, byte[] data, List<byte[]> participants, out DateTime creationDate, bool encrypted = true)
+        public byte[] CreateDataPost(MessageType type, byte[] data, List<byte[]> participants, out DateTime creationDate, ulong? replyToPostId, bool encrypted = true)
         {
-            return CreateDataPostInternal(type, data, participants, null, out creationDate, encrypted);
+            return CreateDataPostInternal(type, data, replyToPostId, participants, null, out creationDate, encrypted);
         }
         /// <summary>
         /// This feature creates an unencrypted post for chat participants. It must therefore be sent to the server in order to be distributed to all.
@@ -470,13 +468,14 @@ namespace EncryptedMessaging
         /// <param name="data">Message data</param>
         /// <param name="usersId">User ID of each participant</param>
         /// <param name="creationDate">Return current time GTM</param>
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
         /// <returns>Data post</returns>
-        public byte[] CreateDataPostUnencrypted(MessageType type, byte[] data, ulong[] usersId, out DateTime creationDate)
+        public byte[] CreateDataPostUnencrypted(MessageType type, byte[] data, ulong[] usersId, out DateTime creationDate, ulong? replyToPostId)
         {
-            return CreateDataPostInternal(type, data, null, usersId, out creationDate, false);
+            return CreateDataPostInternal(type, data, replyToPostId, null, usersId, out creationDate, false);
         }
 
-        private byte[] CreateDataPostInternal(MessageType type, byte[] data, List<byte[]> participants, ulong[] usersId, out DateTime creationDate, bool encrypted = true)
+        private byte[] CreateDataPostInternal(MessageType type, byte[] data, ulong? replyToPostId, List<byte[]> participants, ulong[] usersId, out DateTime creationDate, bool encrypted = true)
         {
             //try
             //{
@@ -494,6 +493,11 @@ namespace EncryptedMessaging
                 version |= 0b10000000; // This bit indicates that the message is not encrypted
             var unixTimestamp = ToUnixTimestamp(Time.CurrentTimeGMT);
             creationDate = FromUnixTimestamp(unixTimestamp);
+            if (replyToPostId != null) //Replication messages have some additional information that is added to the beginning of the data (message type and the id of the post being replied to)
+            {
+                type = MessageType.ReplyToMessage;
+                data = new byte[] { (byte)MessageType.ReplyToMessage }.Combine(GetBytes((ulong)replyToPostId), data);
+            }
             // [0]=version, [1][2][3][4]=timestamp, [5]=data type
             var postData = new byte[] { (byte)version }.Combine(GetBytes(unixTimestamp), new byte[] { (byte)type });
             if (participants != null)

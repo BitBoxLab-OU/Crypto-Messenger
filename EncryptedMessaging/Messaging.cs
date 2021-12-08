@@ -70,7 +70,7 @@ namespace EncryptedMessaging
                 {
                     // Only the server can process non-encrypted messages for particular purposes, for example when you want to receive communication from a client not in the contacts directory, or when the data is already encrypted and does not require further encryption
                     if (!Context.IsServer && !isViewable) return;
-                        ExecuteCommand(chatId, message);
+                    ExecuteCommand(chatId, message);
                 }
                 else // Only encrypted messages are taken into consideration, they have been validated by verifying the digital signature
                 {
@@ -82,7 +82,7 @@ namespace EncryptedMessaging
                             Context.Repository.AddPost(data, chatId, ref receptionTime);
                             if (isViewable)
                             {
-                                Context.OnNotification?.Invoke(message);
+                                Context.OnNotificationInvoke(message);
                                 if (CurrentChatRoom != message.Contact)
                                     message.Contact.SetUnreadMessages(message.Contact.UnreadMessages + 1, true);
                                 if (MultipleChatModes || CurrentChatRoom == message.Contact)
@@ -106,9 +106,9 @@ namespace EncryptedMessaging
         private void InvokeOnContactEvent(Message message)
         {
             if (Context.IsServer)
-                Context.OnContactEvent?.Invoke(message);
+                Context.OnContactEventInvoke(message);
             else
-                Context.InvokeOnMainThread(() => Context.OnContactEvent?.Invoke(message));
+                Context.InvokeOnMainThread(() => Context.OnContactEventInvoke(message));
         }
 
         private void ExecuteCommand(ulong chatId, Message message)
@@ -167,7 +167,7 @@ namespace EncryptedMessaging
             // Update the empirical value of unread messages from the contact (value to be included in notifications)
             if (isMy)
                 message.Contact.RemoteUnreaded++;
-            Context.ViewMessage?.Invoke(message, isMy);
+            Context.ViewMessageInvoke(message, isMy);
         }
 
         private void UpdateReaded(Message message)
@@ -194,13 +194,16 @@ namespace EncryptedMessaging
         /// <param name="type">The type of data</param>
         /// <param name="data">The body of the data in binary format</param>
         /// <param name="toContact">recipient of the message. ToContact and toIdUsers cannot be set simultaneously</param>
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
         /// <param name="chatId">Set this value if toContact is null, that is, if the message is not encrypted</param>
         /// <param name="toIdUsers">Id of the members of the group the message is intended for. ToContact and toIdUsers cannot be set simultaneously</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
-        private void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true)
+        private void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? replyToPostId = null, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true)
         {
 #if DEBUG
+            if (replyToPostId != null && !MessageDescription.ContainsKey(type))
+                Debugger.Break(); // It is recommended that you use reply to a message, only with messages that can be viewed in the chat
             if (toContact != null && toIdUsers != null)
                 Debugger.Break(); // toContact and toIdUsers cannot be set simultaneously
             if (toIdUsers != null && encrypted)
@@ -234,7 +237,7 @@ namespace EncryptedMessaging
             if (type != MessageType.ContactStatus && toContact?.IsBlocked == true) return;
             toContact?.ExtendSessionTimeout();
             byte[] dataPost; DateTime creationDate;
-            dataPost = toIdUsers != null ? Context.MessageFormat.CreateDataPostUnencrypted(type, data, toIdUsers, out creationDate) : Context.MessageFormat.CreateDataPost(type, data, toContact.Participants, out creationDate, encrypted);
+            dataPost = toIdUsers != null ? Context.MessageFormat.CreateDataPostUnencrypted(type, data, toIdUsers, out creationDate, replyToPostId) : Context.MessageFormat.CreateDataPost(type, data, toContact.Participants, out creationDate, replyToPostId, encrypted);
             if (MessageDescription.ContainsKey(type) && toContact?.IsVisible == true)
             {
                 var localStorageTime = DateTime.UtcNow;
@@ -274,11 +277,12 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="text">The text to send</param>
         /// <param name="toContact">The recipient</param>
-        public void SendText(string text, Contact toContact)
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
+        public void SendText(string text, Contact toContact, ulong? replyToPostId = null)
         {
             text = text?.Trim();
             if (!string.IsNullOrEmpty(text))
-                SendMessage(MessageType.Text, Encoding.Unicode.GetBytes(text), toContact);
+                SendMessage(MessageType.Text, Encoding.Unicode.GetBytes(text), toContact, replyToPostId);
         }
 
         /// <summary>
@@ -286,17 +290,15 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="png">PNG file, maximum side size = 800 pix</param>
         /// <param name="toContact">The recipient</param>
-        public void SendPicture(byte[] png, Contact toContact) =>
-            //SendPicture(new System.IO.MemoryStream(png), toContact);
-            SendMessage(MessageType.Image, png, toContact);
-
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
+        public void SendPicture(byte[] png, Contact toContact, ulong? replyToPostId = null) =>
+            SendMessage(MessageType.Image, png, toContact, replyToPostId);
 
         /// <summary>
         /// Send a info
         /// </summary>
         /// <param name="inform">Info type</param>
         /// <param name="toContact">The recipient</param>
-        /// <param name="toContact">recipient of the message. ToContact and toIdUsers cannot be set simultaneously</param>
         /// <param name="chatId">Set this value if toContact is null, that is, if the message is not encrypted</param>
         /// <param name="toIdUsers">Id of the members of the group the message is intended for. ToContact and toIdUsers cannot be set simultaneously</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
@@ -304,7 +306,7 @@ namespace EncryptedMessaging
 
         public void SendInfo(InformType inform, Contact toContact, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true)
         {
-            SendMessage(MessageType.Inform, new[] { (byte)inform }, toContact, chatId, toIdUsers, directlyWithoutSpooler, encrypted);
+            SendMessage(MessageType.Inform, new[] { (byte)inform }, toContact, null, chatId, toIdUsers, directlyWithoutSpooler, encrypted);
         }
 
 
@@ -316,7 +318,7 @@ namespace EncryptedMessaging
         /// <param name="binaryData">Binary data block to send</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
-        public void SendBinary(Contact toContact, byte[] binaryData, bool directlyWithoutSpooler = false, bool encrypted = true) => SendMessage(MessageType.Binary, binaryData, toContact, null, null, directlyWithoutSpooler, encrypted);
+        public void SendBinary(Contact toContact, byte[] binaryData, bool directlyWithoutSpooler = false, bool encrypted = true) => SendMessage(MessageType.Binary, binaryData, toContact, null, null, null, directlyWithoutSpooler, encrypted);
 
         /// <summary>
         /// Send a binary unencrypted (Clients are only able to receive encrypted messages: do not use this command to send messages to communicate between clients)
@@ -325,7 +327,7 @@ namespace EncryptedMessaging
         /// <param name="toIdUsers">The recipients</param>
         /// <param name="binaryData">Binary data block to send</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
-        public void SendBinaryUnencrypetd(ulong chatId, ulong[] toIdUsers, byte[] binaryData, bool directlyWithoutSpooler = false) => SendMessage(MessageType.Binary, binaryData, null, chatId, toIdUsers, directlyWithoutSpooler, false);
+        public void SendBinaryUnencrypetd(ulong chatId, ulong[] toIdUsers, byte[] binaryData, bool directlyWithoutSpooler = false) => SendMessage(MessageType.Binary, binaryData, null, null, chatId, toIdUsers, directlyWithoutSpooler, false);
 
 
         /// <summary>
@@ -336,7 +338,7 @@ namespace EncryptedMessaging
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         /// <param name="values">Data blocks not exceeding 255 bytes each</param>
-        public void SendSmallData(Contact toContact, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SmallData, Functions.JoinData(true, values), toContact, null, null, directlyWithoutSpooler, encrypted);
+        public void SendSmallData(Contact toContact, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SmallData, Functions.JoinData(true, values), toContact, null, null, null, directlyWithoutSpooler, encrypted);
 
         /// <summary>
         /// Send array of bytes
@@ -346,7 +348,7 @@ namespace EncryptedMessaging
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         /// <param name="values">Data blocks not exceeding 255 bytes each</param>
-        public void SendData(Contact toContact, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.Data, Functions.JoinData(false, values), toContact, null, null, directlyWithoutSpooler, encrypted);
+        public void SendData(Contact toContact, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.Data, Functions.JoinData(false, values), toContact, null, null, null, directlyWithoutSpooler, encrypted);
 
 
         /// <summary>
@@ -390,7 +392,7 @@ namespace EncryptedMessaging
                 list.Add(tuple.Item2);
             }
             var data = Functions.JoinData(valueMustBeLessOf256Bytes, list.ToArray());
-            SendMessage(valueMustBeLessOf256Bytes ? MessageType.SmallData : MessageType.Data, data, toContact, null, null, directlyWithoutSpooler);
+            SendMessage(valueMustBeLessOf256Bytes ? MessageType.SmallData : MessageType.Data, data, toContact, null, null, null, directlyWithoutSpooler);
         }
 
         /// <summary>
@@ -435,7 +437,8 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="mp3">mp3 64 kbps file</param>
         /// <param name="toContact">The recipient</param>
-        public void SendAudio(byte[] mp3, Contact toContact) => SendMessage(MessageType.Audio, mp3, toContact);
+        /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
+        public void SendAudio(byte[] mp3, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.Audio, mp3, toContact, replyToPostId);
 
         /// <summary>
         /// The only type of audio file allowed is mp3, with a speed of 64 k bps or lower.
@@ -445,7 +448,7 @@ namespace EncryptedMessaging
         public void SendContact(Contact contact, Contact toContact, bool directlyWithoutSpooler = false, bool purposeIsUpdateOnly = false)
         {
             var data = ContactMessage.GetDataMessageContact(contact, Context, purposeIsUpdateOnly: purposeIsUpdateOnly);
-            SendMessage(MessageType.Contact, data, toContact, null, null, directlyWithoutSpooler);
+            SendMessage(MessageType.Contact, data, toContact, null, null, null, directlyWithoutSpooler);
         }
 
         /// <summary>
@@ -500,14 +503,21 @@ namespace EncryptedMessaging
 
         public void SendDeclinedCall(byte[] call, Contact toContact) => SendMessage(MessageType.DeclinedCall, call, toContact);
 
-        public void SendLocation(double latitude, double longitude, Contact toContact)
+        /// <summary>
+        /// Submit a geographic location
+        /// </summary>
+        /// <param name="latitude"></param>
+        /// <param name="longitude"></param>
+        /// <param name="toContact"></param>
+        /// <param name="replyToPostId"></param>
+        public void SendLocation(double latitude, double longitude, Contact toContact, ulong? replyToPostId = null)
         {
-            SendMessage(MessageType.Location, BitConverter.GetBytes(latitude).Combine(BitConverter.GetBytes(longitude)), toContact);
+            SendMessage(MessageType.Location, BitConverter.GetBytes(latitude).Combine(BitConverter.GetBytes(longitude)), toContact, replyToPostId);
         }
 
-        public void SendPdfDocument(byte[] document, Contact toContact) => SendMessage(MessageType.PdfDocument, document, toContact);
+        public void SendPdfDocument(byte[] document, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.PdfDocument, document, toContact, replyToPostId);
 
-        public void SendPhoneContact(byte[] phoneContact, Contact toContact) => SendMessage(MessageType.PhoneContact, phoneContact, toContact);
+        public void SendPhoneContact(byte[] phoneContact, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.PhoneContact, phoneContact, toContact, replyToPostId);
 
         /// <summary>
         /// This command allows sub-applications (plugins, modules, extensions) to send commands with parameters. Use the "<see cref="Message.GetSubApplicationParameters(out ushort, out ushort)"/>" method of the Message class to read this command on the receiving device
@@ -518,7 +528,7 @@ namespace EncryptedMessaging
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         /// <param name="values">Data blocks (Command parameters to use in the plugin or extension). NOTE: If you intend to send single data (not an array of parameters), use the other overload</param>
-        public void SendCommandToSubApplication(Contact toContact, ushort appId, ushort command, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SubApplication, Functions.JoinData(false, values).Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, directlyWithoutSpooler, encrypted);
+        public void SendCommandToSubApplication(Contact toContact, ushort appId, ushort command, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SubApplication, Functions.JoinData(false, values).Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
         /// <summary>
         /// This command allows sub-applications (plugins, modules, extensions) to send commands with data. Use the "<see cref="Message.GetSubApplicationData(out ushort, out ushort)"/>" method of the Message class to read this command on the receiving device
         /// </summary>
@@ -532,7 +542,7 @@ namespace EncryptedMessaging
         {
             if (data == null)
                 data = new byte[0];
-            SendMessage(MessageType.SubApplication, data.Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, directlyWithoutSpooler, encrypted);
+            SendMessage(MessageType.SubApplication, data.Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
         }
 
         /// <summary>
@@ -554,18 +564,6 @@ namespace EncryptedMessaging
                 throw new ArgumentException("This value must not exceed 256 characters");
 #endif
             var data = Functions.JoinData(true, Encoding.ASCII.GetBytes(contentType), privateKey, Encoding.Unicode.GetBytes(description), Encoding.ASCII.GetBytes(serverUrl));
-            SendMessage(MessageType.ShareEncryptedContent, data, toContact);
-        }
-        /// <summary>
-        /// Reply to a received message, with a text message. This message will be displayed to the recipient, with the quotation of the message to which you have replied. You can reply to any type of message that generates a view in the chat.
-        /// Use the "<see cref="Message.GetReplyToMessage(out ulong)"/>" method of the Message class to read this command on the receiving device
-        /// </summary>
-        /// <param name="toContact">Recipient</param>
-        /// <param name="replyToPostId">The postId property of the message you want to reply to</param>
-        /// <param name="textReply">A text response to a received message</param>
-        public void ReplyToMessage(Contact toContact, ulong replyToPostId, string textReply)
-        {
-            var data = replyToPostId.GetBytes().Combine(Encoding.Unicode.GetBytes(textReply));
             SendMessage(MessageType.ShareEncryptedContent, data, toContact);
         }
 

@@ -110,11 +110,15 @@ namespace EncryptedMessaging
         public delegate void OnMessageArrived(Message message);
         /// <summary>
         /// Delegate that runs automatically when messages are received. On systems that have a stable connection (server or desktop), this event can be used to generate notifications.
-        /// Note: Only messages that have viewable content in the chat trigger this method
+        /// Note: Only messages that have viewable content in the chat trigger this event
         /// </summary>
-        public OnMessageArrived OnNotification;
+        public event OnMessageArrived OnNotification;
+        internal void OnNotificationInvoke(Message message)
+        {
+            OnNotification?.Invoke(message);
+        }
         /// <summary>
-        /// Function delegated with the method that creates the message visible in the user interface. This function will then be called whenever a message needs to be drawn in the chat. Server-type host systems that don't have messages to render in chat probably don't need to set this action
+        /// Function delegated with the event that creates the message visible in the user interface. This function will then be called whenever a message needs to be drawn in the chat. Server-type host systems that don't have messages to render in chat probably don't need to set this action
         /// </summary>
         /// <param name="message">The message to render in the chat view</param>
         /// <param name="isMyMessage">True if you call it to render my message</param>
@@ -122,13 +126,21 @@ namespace EncryptedMessaging
         /// <summary>
         /// It is the function delegate who writes a message in the chat. This function must be set when the App() class is initialized in the common project.
         /// </summary>
-        public ViewMessageUi ViewMessage;
+        public event ViewMessageUi ViewMessage;
+        internal void ViewMessageInvoke(Message message, bool isMyMessage)
+        {
+            ViewMessage?.Invoke(message, isMyMessage);
+        }
+        public delegate void OnContactEventDelegate(Message message);
         /// <summary>
-        /// This delegate allows you to set up a method that will be called whenever a system message arrives. Messages that have a graphical display in the chat do not trigger this event.
+        /// This delegate allows you to set up a event that will be called whenever a system message arrives. Messages that have a graphical display in the chat do not trigger this event.
         /// Use OnMessageArrived to intercept incoming messages that have a content display in the chat
         /// </summary>
-        public Action<Message> OnContactEvent;
-
+        public event Action<Message> OnContactEvent;
+        internal void OnContactEventInvoke(Message message)
+        {
+            OnContactEvent?.Invoke(message);
+        }
         /// <summary>
         /// Event that is raised to inform when someone has read a sent message
         /// </summary>
@@ -137,10 +149,13 @@ namespace EncryptedMessaging
         /// <param name="lastRadTime">When the last reading took place</param>
         public delegate void LastReadedTimeChangeEvent(Contact contact, ulong participantId, DateTime lastRadTime);
         /// <summary>
-        /// Method that is performed when a contact reads a message that has been sent
+        /// Event that is performed when a contact reads a message that has been sent
         /// </summary>              
-        public LastReadedTimeChangeEvent OnLastReadedTimeChange;
-
+        public event LastReadedTimeChangeEvent OnLastReadedTimeChange;
+        internal void OnLastReadedTimeChangeInvoke(Contact contact, ulong participantId, DateTime lastRadTime)
+        {
+            InvokeOnMainThread(() => OnLastReadedTimeChange?.Invoke(contact, participantId, lastRadTime));            
+        }  
         /// <summary>
         /// Delegate for the event that notifies when messages are sent
         /// </summary>
@@ -151,7 +166,11 @@ namespace EncryptedMessaging
         /// <summary>
         /// Event that occurs when a message has been sent
         /// </summary>
-        public MessageDeliveredEvent OnMessageDelivered;
+        public event MessageDeliveredEvent OnMessageDelivered;
+        internal void OnMessageDeliveredInvoke(Contact contact, DateTime deliveredTime, bool isMy)
+        {
+            OnMessageDelivered?.Invoke(contact, deliveredTime, isMy);
+        }
 
         /// <summary>
         /// thread-safe calls
