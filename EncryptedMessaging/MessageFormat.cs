@@ -66,7 +66,7 @@ namespace EncryptedMessaging
         /// <summary>
         /// If different from null it indicates that this is a reply post previously sent in the group that the contact represents 
         /// </summary>
-        public readonly ulong? ReplyToPostId;
+        public ulong? ReplyToPostId { get; internal set; }
         /// <summary>
         /// Unique identifier that indicates the message in a chat. Use this property in all contexts where you need to identify a message, for example, when replying to a specific message, you are referring to the message with the ID of the message you want to reply to.
         /// </summary>
@@ -495,8 +495,8 @@ namespace EncryptedMessaging
             creationDate = FromUnixTimestamp(unixTimestamp);
             if (replyToPostId != null) //Replication messages have some additional information that is added to the beginning of the data (message type and the id of the post being replied to)
             {
+                data = new byte[] { (byte)type }.Combine(GetBytes((ulong)replyToPostId), data);
                 type = MessageType.ReplyToMessage;
-                data = new byte[] { (byte)MessageType.ReplyToMessage }.Combine(GetBytes((ulong)replyToPostId), data);
             }
             // [0]=version, [1][2][3][4]=timestamp, [5]=data type
             var postData = new byte[] { (byte)version }.Combine(GetBytes(unixTimestamp), new byte[] { (byte)type });

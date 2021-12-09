@@ -241,7 +241,11 @@ namespace EncryptedMessaging
             if (MessageDescription.ContainsKey(type) && toContact?.IsVisible == true)
             {
                 var localStorageTime = DateTime.UtcNow;
-                var message = new Message(Context, toContact, type, Context.My.Csp.ExportCspBlob(false), creationDate, data, localStorageTime, Repository.PostId(dataPost), encrypted, toContact.ChatId, Context.My.GetId()); //Prepare the plain-text message to view							
+                //Prepare the plain-text message to view
+                var message = new Message(Context, toContact, type, Context.My.Csp.ExportCspBlob(false), creationDate, data, localStorageTime, Repository.PostId(dataPost), encrypted, toContact.ChatId, Context.My.GetId())
+                {
+                    ReplyToPostId = replyToPostId
+                };
                 Context.Repository.AddPost(dataPost, toContact.ChatId, ref localStorageTime); // Add the encrypted message to the local storage and also forward it to the server
                 toContact.SetLastMessagePreview(message);
                 toContact.SetLastMessageSent(creationDate, Utility.DataId(dataPost));
