@@ -154,6 +154,7 @@ namespace EncryptedMessaging
                     ContactsList.Add(contact);
             }
             addContact(GetCloudContact());
+            addContact(GetBankingCloudContact());
             SortContacts(true);
             ForEachContact(contact => contact.RefreshReadedInfoInUI());
         }
@@ -649,10 +650,23 @@ namespace EncryptedMessaging
         }
 
         private Contact _cloud;
+        private Contact _bankingCloud;
         //#if DEBUG
         //static public string CloudPubKey = @"A4f7EZyD/lVQd5P4r0H3haPCdQJNOU/6sm7LsZoIT+XH";
         //#else
         public static string CloudPubKey = @"ApkrRQUe7qbaKY05Lbs5z+o001UNzXlfHgm+9KEN41vE";
+        
+        
+        public static string BankingCloudPubKey = @"A1JNVNQxFZf6lVpo2R+35qElmaJwVBAk/1o+Vz3y8WPv";
+        
+        public Contact GetBankingCloudContact()
+        {
+            if (_bankingCloud != null) return _bankingCloud;
+            Context.ContactConverter.PublicKeysToParticipants(BankingCloudPubKey, out var serverUser);
+            _bankingCloud = new Contact(Context, serverUser, "Server", "en", isServer: true);
+            return _bankingCloud;
+        }
+        
 
         public static ulong CloudUserId;
         //#endif
