@@ -11,7 +11,7 @@ namespace CommunicationChannel
     internal class Tcp
     {
         internal static List<Tcp> Tcps = new List<Tcp>();
-        public Tcp(Channell channell)
+        internal Tcp(Channell channell)
         {
             Channell = channell;
             TimerCheckConnection = new Timer(OnTimerCheckConnection, null, Timeout.Infinite, Timeout.Infinite);
@@ -115,7 +115,10 @@ namespace CommunicationChannel
             if (!Logged && dataLength > 0 && data[0] != (byte)Protocol.Command.ConnectionEstablished)
             {
                 Debug.WriteLine(Channell.ServerUri); // Current entry point
-                Debugger.Break(); // Verify if the server running and if you have internet connection! and: Don't send message before authentication on the server! (Perhaps there is no server at the current entry point)
+                if (directlyWithoutSpooler)
+                    Debugger.Break(); // Don't send message directly without spooler before authentication on the server!
+                else
+                    Debugger.Break(); // Verify if the server running and if you have internet connection!  (Perhaps there is no server at the current entry point)
             }
 #endif
             if (dataLength > _maxDataLength) { Channell.Spooler.OnSendCompleted(data, new Exception("excess data length"), false); return; }

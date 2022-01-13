@@ -103,31 +103,63 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="appId">Sub application Id (plugin Id)</param>
         /// <param name="command">Id of the command used in the protocol of the sub application</param>
-        /// <returns>Parameters</returns>
-        public List<byte[]> GetSubApplicationParameters(out ushort appId, out ushort command)
+        /// <param name="parameters">The parameters that were sent with the command</param>
+        /// <returns>False if the received message is not of the SubApplicationCommandWithParameters type</returns>
+        public bool GetSubApplicationCommandWithParameters(out ushort appId, out ushort command, out List<byte[]> parameters)
         {
-            var data = GetSubApplicationData(out appId, out command);
-            return Functions.SplitData(data, false);
+            if (Type != MessageFormat.MessageType.SubApplicationCommandWithParameters)
+            {
+                appId = default;
+                command = default;
+                parameters = default;
+                return false;
+            }
+            GetSubApplicationCommandWithData(out appId, out command, out byte[] data);
+            parameters = Functions.SplitData(data, false);
+            return true;
         }
         /// <summary>
         /// Read the commands and data sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, ushort, ushort, bool, bool, byte[])"/>
         /// </summary>
         /// <param name="appId">Sub application Id (plugin Id)</param>
         /// <param name="command">Id of the command used in the protocol of the sub application</param>
-        /// <exception cref="ArgumentException"></exception>
-        /// <returns>Data</returns>
-        public byte[] GetSubApplicationData(out ushort appId, out ushort command)
+        /// <param name="data">The data that was sent with the command</param>
+        /// <returns>False if the received message is not of the SubApplicationCommandWithData type</returns>
+        public bool GetSubApplicationCommandWithData(out ushort appId, out ushort command, out byte[] data)
         {
-            if (Type != MessageFormat.MessageType.SubApplication)
+            if (Type != MessageFormat.MessageType.SubApplicationCommandWithData && Type != MessageFormat.MessageType.SubApplicationCommandWithParameters)
             {
-                TypeNotValidError();
+                appId = default;
+                command = default;
+                data = default;
+                return false;
             }
             var messageData = GetData();
             appId = BitConverter.ToUInt16(messageData, messageData.Length - 4);
             command = BitConverter.ToUInt16(messageData, messageData.Length - 2);
-            var data = new byte[messageData.Length - 4];
+            data = new byte[messageData.Length - 4];
             Array.Copy(messageData, 0, data, 0, data.Length);
-            return data;
+            return true;
+        }
+
+        /// <summary>
+        /// Read the commands sent by a sub application via <see cref="Messaging.SendCommandToSubApplication(Contact, ushort, ushort, bool, bool, byte[])"/> or <see cref="Messaging.SendCommandToSubApplication(Contact, ushort, ushort, bool, bool, byte[][])"/>
+        /// It is an alternative method to the methods GetSubApplicationCommandWithData and GetSubApplicationCommandWithParameters
+        /// </summary>
+        /// <param name="appId">Sub application Id (plugin Id)</param>
+        /// <param name="command">Id of the command used in the protocol of the sub application</param>
+        /// <param name="data">The data that was sent with the command</param>
+        /// <param name="parameters">The parameters that were sent with the command</param>
+        /// <returns>False if the received message is not of the SubApplicationCommandWithData type</returns>
+        public bool GetSubApplicationCommand(out ushort appId, out ushort command, out byte[] data, out List<byte[]> parameters)
+        {
+            if (Type == MessageFormat.MessageType.SubApplicationCommandWithParameters)
+            {
+                data = null;
+                return (GetSubApplicationCommandWithParameters(out appId, out command, out parameters));
+            }
+            parameters = null;
+            return (GetSubApplicationCommandWithData(out appId, out command, out data));
         }
 
         /// <summary>
@@ -248,9 +280,14 @@ namespace EncryptedMessaging
             DeclinedCall,
             /// <summary>
             /// Used to send commands for sub applications (plugins, modules, additional features): Each sub application has an ID and a command that must be sent with the messaging protocol.
-            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[])"/>, "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[][])"/>"
+            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[])"/>"
             /// </summary>
-            SubApplication,
+            SubApplicationCommandWithData,
+            /// <summary>
+            /// Used to send commands for sub applications (plugins, modules, additional features): Each sub application has an ID and a command that must be sent with the messaging protocol.
+            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[][])"/>"
+            /// </summary>
+            SubApplicationCommandWithParameters,
             /// <inheritdoc cref="Messaging.ShareEncryptedContent(EncryptedMessaging.Contact, string, byte[], string, string)"/>
             ShareEncryptedContent,
             /// <inheritdoc cref="Messaging.ReplyToMessage(EncryptedMessaging.Contact, ulong, string)"/>

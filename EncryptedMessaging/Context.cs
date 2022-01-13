@@ -250,7 +250,6 @@ namespace EncryptedMessaging
         public delegate void AlertMessage(string text);
         public delegate bool ShareTextMessage(string text);
         // Through this we can program an action that is triggered when a message arrives from a certain chat id
-        public Dictionary<ulong, Action<Message>> OnMessageBinaryCome = new Dictionary<ulong, Action<Message>>();
 
         internal int Domain;
         public Channell Channell;
