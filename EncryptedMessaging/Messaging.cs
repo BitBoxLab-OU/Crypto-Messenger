@@ -58,13 +58,12 @@ namespace EncryptedMessaging
 
         internal void ExecuteOnDataArrival(ulong chatId, byte[] data)
         {
-            var myId = Context.My.GetId();
             var receptionTime = DateTime.UtcNow;
             if (Context.MessageFormat.ReadDataPost(data, chatId, receptionTime, out var message, true))
             {
                 var isViewable = MessageDescription.ContainsKey(message.Type);
-                if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
-                    action.Invoke(message); // Raise an event for plugins listening for binary data
+                //if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
+                //    action.Invoke(message); // Raise an event for plugins listening for binary data
 
                 if (!message.Encrypted) // Incoming messages without encryption are ignored
                 {
@@ -212,7 +211,7 @@ namespace EncryptedMessaging
             if (!Context.IsReady)
             {
                 Debugger.Break(); // Do not send messages before the context is not initialized, the presence of connectivity is not clear at this stage. Write the code inside OnInitializedAndConnectivityIsOn () in Context if you need to send data when connectivity appears.
-                SpinWait.SpinUntil(() => Context.IsReady);
+                SpinWait.SpinUntil(() => !Context.IsReady);
             }
 
             if (toContact?.IsServer == true && encrypted && !AntiRecursive) // The servers don't have the client's public key because they don't have the contact list. The login consists in sending your contact to the server, so that it can have the public key to communicate in encrypted form.
@@ -427,7 +426,7 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="onServer">Server to login</param>
-        private void LoginToServer(bool directlyWithoutSpooler, Contact onServer)
+        public void LoginToServer(bool directlyWithoutSpooler, Contact onServer)
         {
             if ((Time.CurrentTimeGMT - onServer.ServerLoggedTime) >= Context.DefaultServerSessionTimeout.Add(-new TimeSpan(0, 1, 0)))
             {
@@ -524,7 +523,7 @@ namespace EncryptedMessaging
         public void SendPhoneContact(byte[] phoneContact, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.PhoneContact, phoneContact, toContact, replyToPostId);
 
         /// <summary>
-        /// This command allows sub-applications (plugins, modules, extensions) to send commands with parameters. Use the "<see cref="Message.GetSubApplicationParameters(out ushort, out ushort)"/>" method of the Message class to read this command on the receiving device
+        /// This command allows sub-applications (plugins, modules, extensions) to send commands with parameters. Use the "<see cref="Message.GetSubApplicationCommandWithParameters(out ushort, out ushort, out List{byte[]})"/>" method of the Message class to read this command on the receiving device
         /// </summary>
         /// <param name="toContact">Recipient</param>
         /// <param name="appId">Sub application Id (plugin Id)</param>
@@ -532,9 +531,9 @@ namespace EncryptedMessaging
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         /// <param name="values">Data blocks (Command parameters to use in the plugin or extension). NOTE: If you intend to send single data (not an array of parameters), use the other overload</param>
-        public void SendCommandToSubApplication(Contact toContact, ushort appId, ushort command, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SubApplication, Functions.JoinData(false, values).Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
+        public void SendCommandToSubApplication(Contact toContact, ushort appId, ushort command, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values) => SendMessage(MessageType.SubApplicationCommandWithParameters, Functions.JoinData(false, values).Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
         /// <summary>
-        /// This command allows sub-applications (plugins, modules, extensions) to send commands with data. Use the "<see cref="Message.GetSubApplicationData(out ushort, out ushort)"/>" method of the Message class to read this command on the receiving device
+        /// This command allows sub-applications (plugins, modules, extensions) to send commands with data. Use the "<see cref="Message.GetSubApplicationCommandWithData(out ushort, out ushort, out byte[])"/>" method of the Message class to read this command on the receiving device
         /// </summary>
         /// <param name="toContact">Recipient</param>
         /// <param name="appId">Sub application Id (plugin Id)</param>
@@ -546,7 +545,7 @@ namespace EncryptedMessaging
         {
             if (data == null)
                 data = new byte[0];
-            SendMessage(MessageType.SubApplication, data.Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
+            SendMessage(MessageType.SubApplicationCommandWithData, data.Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
         }
 
         /// <summary>

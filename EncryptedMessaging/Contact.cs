@@ -28,6 +28,11 @@ namespace EncryptedMessaging
             if (Context.My.IsServer)
                 _sessionTimeout = new Timer(SessionExpired, this, (uint)Context.DefaultServerSessionTimeout.TotalMilliseconds, Timeout.Infinite);
         }
+        /// <summary>
+        /// It can be used by server applications to store data relating to this contact during a session. When the session expires, the Contact object is deleted and the session data will be deleted (the concept is similar to web application session data)
+        /// </summary>
+        [XmlIgnore]
+        public Dictionary<string, object> Session = new Dictionary<string, object>();
         private readonly Timer _sessionTimeout;
         private void SessionExpired(object obj) => Context.Contacts.RemoveContact(this);
         internal void ExtendSessionTimeout()
