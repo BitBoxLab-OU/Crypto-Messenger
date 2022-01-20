@@ -57,80 +57,77 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="chatId">The id of the chat whose posts you want to read</param>
         /// <param name="action">Action to be performed for each post, the byte[] is binary data of the encrypted post that is read from the repository, DateTime is the time the post was received which you can use as a unique ID (you can use the ticks property of DateTime as a unique id ) </param>
-        /// <param name="async">Do this synchronously or asynchronously (in the background)</param>
-        /// <param name="take">Limit the number of messages to take, in case you don't want the whole message list</param>
+        /// <param name="antecedent">If set, consider only posts that are dated before the value indicated. It is useful for paginating messages in the chat view, or for telling the loading of messages in blocks. How to use this parameter: You need to store the date of the oldest message that is displayed in the chat, when you want to load a second block of messages you have to pass this date in order to get the next block</param>
+        /// <param name="take">Limit the number of messages to take. If not set, the value set in the Context.Setting.MessagePagination settings will be used. Pass the Context.Setting.KeepPost value to process all messages!</param>
         /// <param name="exclude">List of posts to exclude using the received date as a filter</param>
-        public void ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, bool async = false, int? take = null, List<DateTime> exclude = null)
+        /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "antecedent" parameter.</returns>
+        public DateTime ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, DateTime antecedent = default, int? take = null, List<DateTime> exclude = null)
         {
+            DateTime olderPost = DateTime.MaxValue;
             var path = _path(chatId);
             if (Directory.Exists(path))
             {
-                if (take == null)
-                    take = _context.Setting.KeepPost;
-                void readPosts()
+                var files = Directory.GetFiles(path, "*.post");
+                var filesList = new List<postFile>();
+                foreach (var file in files)
+                    filesList.Add(new postFile { FileName = file, ReceptionDate = GetFileDate(file) });
+
+                //remove old file
+                var n = 0;
+                foreach (var file in filesList)
                 {
-
-                    var files = Directory.GetFiles(path, "*.post");
-                    var filesList = new List<postFile>();
-                    foreach (var file in files)
-                        filesList.Add(new postFile { FileName = file, ReceptionDate = GetFileDate(file) });
-
-                    //remove old file
-                    foreach (var file in filesList.ToArray())
-                        if (Time.CurrentTimeGMT - file.ReceptionDate >= TimeSpan.FromDays(_context.Setting.PostPersistenceDays))
-                        {
-                            File.Delete(file.FileName);
-                            filesList.Remove(file);
-                            lock (ReceptionToPostId)
-                            {
-                                if (ReceptionToPostId.ContainsKey(file.ReceptionDate))
-                                    ReceptionToPostId.Remove(file.ReceptionDate);
-                            }
-                        }
-
-                    filesList = filesList.OrderByDescending(o => o.ReceptionDate).ToList();
-                    var partialList = filesList.Take((int)take).ToArray();
-
-                    //remove the last ones
-                    foreach (var file in filesList.ToArray())
-                        if (!partialList.Contains(file))
-                        {
-                            File.Delete(file.FileName);
-                            lock (ReceptionToPostId)
-                            {
-                                if (ReceptionToPostId.ContainsKey(file.ReceptionDate))
-                                    ReceptionToPostId.Remove(file.ReceptionDate);
-                            }
-                        }
-
-                    _context.Contacts.RefreshSuspend = true;
-                    foreach (var file in partialList)
+                    if (n >= _context.Setting.KeepPost || (Time.CurrentTimeGMT - file.ReceptionDate >= TimeSpan.FromDays(_context.Setting.PostPersistenceDays)))
                     {
-                        if (exclude == null || !exclude.Contains(file.ReceptionDate))
+                        File.Delete(file.FileName);
+                        filesList.Remove(file);
+                        lock (ReceptionToPostId)
                         {
-                            var data = File.ReadAllBytes(file.FileName);
-                            if (action != null)
-                            {
-                                action(data, file.ReceptionDate);
-                            }
-                            else
-                            {
-                                lock (ReceptionToPostId)
-                                {
-                                    if (!ReceptionToPostId.ContainsKey(file.ReceptionDate))
-                                        ReceptionToPostId.Add(file.ReceptionDate, PostId(data));
-                                }
-                                _context.Messaging.ShowPost(data, chatId, file.ReceptionDate);
-                            }
+                            if (ReceptionToPostId.ContainsKey(file.ReceptionDate))
+                                ReceptionToPostId.Remove(file.ReceptionDate);
                         }
                     }
-                    _context.Contacts.RefreshSuspend = false;
+                    n++;
                 }
-                if (!async)
-                    readPosts();
-                else
-                    new System.Threading.Thread(() => readPosts()).Start();
+                filesList = filesList.OrderByDescending(o => o.ReceptionDate).ToList();
+                var skip = 0;
+                if (antecedent != default)
+                {
+                    foreach (var file in filesList)
+                    {
+                        if (file.ReceptionDate < antecedent)
+                            break;
+                        skip++;
+                    }
+                }
+                if (take == null)
+                    take = _context.Setting.MessagePagination;
+                var partialList = filesList.Skip(skip).Take((int)take).ToArray();
+                if (partialList.Length > 0)
+                    olderPost = partialList.Last().ReceptionDate;
+                _context.Contacts.RefreshSuspend = true;
+                foreach (var file in partialList)
+                {
+                    if (exclude == null || !exclude.Contains(file.ReceptionDate))
+                    {
+                        var data = File.ReadAllBytes(file.FileName);
+                        if (action != null)
+                        {
+                            action(data, file.ReceptionDate);
+                        }
+                        else
+                        {
+                            lock (ReceptionToPostId)
+                            {
+                                if (!ReceptionToPostId.ContainsKey(file.ReceptionDate))
+                                    ReceptionToPostId.Add(file.ReceptionDate, PostId(data));
+                            }
+                            _context.Messaging.ShowPost(data, chatId, file.ReceptionDate);
+                        }
+                    }
+                }
+                _context.Contacts.RefreshSuspend = false;
             }
+            return olderPost;
         }
 
         private struct postFile

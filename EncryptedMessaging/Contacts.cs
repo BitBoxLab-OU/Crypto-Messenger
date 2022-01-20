@@ -50,9 +50,6 @@ namespace EncryptedMessaging
             }
         }
 
-
-
-
         public void RestoreContactFromCloud()
         {
             // the response are processed in class ProcessResponsesFromCloud
@@ -60,10 +57,10 @@ namespace EncryptedMessaging
             Cloud.SendCloudCommands.GetAllObject(Context, "Contact");
         }
 
-        public void ReadPosts() => ForEachContact(contact =>
-        {
-            contact.ReadPosts();
-        });
+        //public void ReadPosts() => ForEachContact(contact =>
+        //{
+        //    contact.ReadPosts();
+        //});
 
         /// <summary>
         /// This feature sorts contacts by sharing what has more recent messages in chat
@@ -90,7 +87,8 @@ namespace EncryptedMessaging
                         ContactsList.Clear();
                         ContactsList.AddRange(sorted);
                     }
-                    new Thread(() => ContactsListChanged?.Invoke(ContactsVisibled)).Start();
+                    //new Thread(() => ContactsListChanged?.Invoke(ContactsVisibled)).Start();
+                    ContactsListChanged?.Invoke(ContactsVisibled);
                 }
             }
         }
@@ -99,10 +97,15 @@ namespace EncryptedMessaging
 
         internal void LoadContacts(bool onlyServer = false)
         {
+            void addContact(Contact contact)
+            {
+                if (ContactsList.ToList().Find((x) => x.UserId == contact.UserId) == null)
+                    ContactsList.Add(contact);
+            }
             if (!Context.My.IsServer && !onlyServer)
             {
                 RefreshSuspend = true;
-                // _context.SecureStorage.ObjectStorage.DeleteAllObject(typeof(Contact));
+                //Context.SecureStorage.ObjectStorage.DeleteAllObject(typeof(Contact)); // RESET ALL CONTACTS!
                 var objects = Context.SecureStorage.ObjectStorage.GetAllObjects(typeof(Contact));
                 foreach (var obj in objects)
                 {
@@ -116,7 +119,6 @@ namespace EncryptedMessaging
                     foreach (var readed in contact.RemoteReadedList)
                         Context.InvokeOnMainThread(() => Context.OnLastReadedTimeChangeInvoke(contact, readed.IdParticipant, readed.DateTime));
                 });
-
                 RefreshSuspend = false;
 
 #if DEBUG || DEBUG_A || DEBUG_B
@@ -125,33 +127,31 @@ namespace EncryptedMessaging
                 if (Context.ContactConverter.PublicKeysToParticipants("An7tQNorwxKrg7H9wseMShCTl79hSH5g8wy+njNvpSrP", out List<byte[]> testUser))
                 {
                     var contact = new Contact(Context, testUser, "Test User");
-                    if (ContactsList.ToList().Find((x) => x.UserId == contact.UserId) == null)
-                        ContactsList.Add(contact);
+                    addContact(contact);
+                }
+#endif
+#if DEBUG_ALI
+                for (int i = 0; i < 12; i++)
+                {
+                    var name =  System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthNames[i] + " User";
+                    if (ContactsList.ToList().Find((x) => x.Name == name) == null)
+                        ContactsList.Add(new Contact(Context, participants: new List<byte[]>() { new CryptoServiceProvider().ExportCspBlob(false) }, name));
                 }
 #endif
 #if DEBUG_A
 				if (Context.ContactConverter.PublicKeysToParticipants(Context.PubK_B, out List<byte[]> pubK_B))
 				{
 					var contact = new Contact(Context, pubK_B, "User B");
-					if (ContactsList.ToList().Find((x) => x.UserId == contact.UserId) == null)
-						ContactsList.Add(contact);
-				}
+                    addContact(contact);
+                }
 #endif
 #if DEBUG_B
 				if (Context.ContactConverter.PublicKeysToParticipants(Context.PubK_A, out List<byte[]> pubK_A))
 				{
-					var contact = new Contact(_context, pubK_A, "User A");
-					if (ContactsList.ToList().Find((x) => x.UserId == contact.UserId) == null)
-						ContactsList.Add(contact);
-					//contact.RequestAvatarUpdate();
-				}
-
+					var contact = new Contact(Context, pubK_A, "User A");
+                    addContact(contact);
+                }
 #endif
-            }
-            void addContact(Contact contact)
-            {
-                if (ContactsList.ToList().Find((x) => x.PublicKeys == contact.PublicKeys) == null)
-                    ContactsList.Add(contact);
             }
             addContact(GetCloudContact());
             SortContacts(true);
@@ -172,19 +172,6 @@ namespace EncryptedMessaging
                 return _lastLoad;
             }
             set { Context.SecureStorage.ObjectStorage.SaveObject(value, "LastLoad"); }
-        }
-
-        private bool _hibernatedChat = true;
-        internal bool HibernatedChat
-        {
-            get => _hibernatedChat;
-            set { _hibernatedChat = value; Context.SecureStorage.ObjectStorage.SaveObject(_hibernatedChat, "HibernatedChat"); }
-        }
-
-        public void HibernatedContactsUI()
-        {
-            ForEachContact((contact) => contact.HibernatedChatUI());
-            HibernatedChat = true;
         }
 
         internal List<Contact> ContactsList = new List<Contact>();
@@ -272,7 +259,7 @@ namespace EncryptedMessaging
             {
                 if (sendToGroup)
                     Context.Messaging.SendContact(contact, contact); // Send this group to all group members
-                                                                      // Add single sub contact if not exists
+                                                                     // Add single sub contact if not exists
                 var myKey = Context.My.Csp.ExportCspBlob(false);
                 foreach (var participant in participants)
                     if (!participant.SequenceEqual(myKey)) // exclude myself

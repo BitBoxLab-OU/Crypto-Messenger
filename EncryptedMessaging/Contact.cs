@@ -112,7 +112,7 @@ namespace EncryptedMessaging
         }
 
         [XmlIgnore]
-        private System.Drawing.Color LightColor;
+        public System.Drawing.Color LightColor;
 
         [XmlIgnore]
         public System.Drawing.Color DarkColor;
@@ -160,45 +160,56 @@ namespace EncryptedMessaging
                 }
             }
         }
-
-        internal void ReadPosts()
+        private DateTime LastPostReaded;
+        /// <summary>
+        /// Read the messages archived for this contact and view them in the chat view. The use of command in sequence will carry out the pagination (load the messages in blocks), to reset the pagination use the appropriate parameter.
+        /// </summary>
+        /// <param name="resetPaginate">Reset pagination, i.e. messages will be loaded from starting with the most recent message block (the first page of messages).</param>
+        public void ReadPosts(bool resetPaginate = false)
         {
+            if (resetPaginate)
+                LastPostReaded = default;
             MessageContainerUI = null;
             if (Context.Messaging.MultipleChatModes)
             {
-                if (Context.Contacts.HibernatedChat == false || RestoreHibernatedUI() == false)
-                    Context.Repository.ReadPosts(ChatId);
+                LastPostReaded = Context.Repository.ReadPosts(ChatId, antecedent: LastPostReaded);
             }
         }
-
+        /// <summary>
+        /// Delegated function that is passed by the client application to back up a post
+        /// </summary>
+        /// <param name="chatId">Chat id</param>
+        /// <param name="post">Encrypted post</param>
+        /// <param name="receptionDate">Date of receipt of the post</param>
+        /// <returns></returns>
         public delegate Action PostBackup(ulong chatId, byte[] post, DateTime receptionDate);
 
         /// <summary>
-        /// Export all posts, useful for example for making a backup
+        /// Export all posts (encrypted in row format), useful for example for making a backup
         /// </summary>
         /// <param name="context">Context</param>
         /// <param name="exportAction">Action that will be performed for each post (If you want to back up put the backup execution code here)</param>
         /// <param name="exclude">List of posts to exclude using the received date as a filter. It is recommended to use this parameter to avoid exporting posts that have already been exported in the past</param>
-        /// <param name="async">Do this synchronously or asynchronously (in the background)</param>
-        /// <param name="take">Limit the number of messages to take, in case you don't want the whole message list</param>
-        static public void ExportPosts(Context context, PostBackup exportAction, List<DateTime> exclude, bool async = false, int? take = null)
+        /// <param name="antecedent">If set, consider only posts that are dated before the value indicated. It is useful for paginating messages in the chat view, or for telling the loading of messages in blocks. How to use this parameter: You need to store the date of the oldest message that is displayed in the chat, when you want to load a second block of messages you have to pass this date in order to get the next block</param>
+        /// <param name="take">Limit the number of messages to take (set this value to paginate messages in chunks), in case you don't want the whole message list. Pass null to process all posts, without any paging!</param>
+        static public void ExportPosts(Context context, PostBackup exportAction, List<DateTime> exclude, DateTime antecedent = default, int? take = null)
         {
-            context.Contacts.ForEachContact((contact) =>
-            {
-                contact.GetPosts((post, receptionDate) => { exportAction(contact.ChatId, post, receptionDate); }, exclude, async, take);
-            });
+            context.Contacts.ForEachContact((contact) => contact.GetPosts((post, receptionDate) => exportAction(contact.ChatId, post, receptionDate), exclude, antecedent, take));
         }
 
         /// <summary>
-        /// Read chat posts for this contact or group (you can use this function to backup chat data)
+        /// Read chat posts (encrypted in row format) for this contact or group (you can use this function to backup chat data)
         /// </summary>
         /// <param name="action">Action to be performed for each post, the byte[] is binary data of the encrypted post that is read from the repository, DateTime is the time the post was received which you can use as a unique ID (you can use the ticks property of DateTime as a unique id ) </param>
         /// <param name="exclude">List of posts to exclude using the received date as a filter. It is recommended to use this parameter to avoid exporting posts that have already been exported in the past</param>
-        /// <param name="async">Do this synchronously or asynchronously (in the background)</param>
-        /// <param name="take">Limit the number of messages to take, in case you don't want the whole message list</param>
-        public void GetPosts(Action<byte[], DateTime> action, List<DateTime> exclude = null, bool async = false, int? take = null)
+        /// <param name="antecedent">If set, consider only posts that are dated before the value indicated. It is useful for paginating messages in the chat view, or for telling the loading of messages in blocks. How to use this parameter: You need to store the date of the oldest message that is displayed in the chat, when you want to load a second block of messages you have to pass this date in order to get the next block</param>
+        /// <param name="take">Limit the number of messages to take (set this value to paginate messages in chunks), in case you don't want the whole message list. Pass null to process all posts, without any paging!</param>
+        /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "antecedent" parameter</returns>
+        public DateTime GetPosts(Action<byte[], DateTime> action, List<DateTime> exclude = null, DateTime antecedent = default, int? take = null)
         {
-            Context.Repository.ReadPosts(ChatId, action, async, take, exclude);
+            if (take == null) // If null then get all messages
+                take = Context.Setting.KeepPost; 
+            return Context.Repository.ReadPosts(ChatId, action, antecedent, take, exclude);
         }
 
         /// <summary>
@@ -211,12 +222,18 @@ namespace EncryptedMessaging
             Context.Repository.AddPost(post, ChatId, ref receptionDate);
         }
 
-        public void HibernatedChatUI() => Context.SecureStorage.DataStorage.BinarySerialize(MessageContainerUI, "UI" + ChatId);
-
-        internal bool RestoreHibernatedUI()
+        /// <summary>
+        /// Returns to a specific action, the messages visible in the chat. Useful function for exporting messages.
+        /// </summary>
+        /// <param name="actionToExecuteForEachMessage">Action that is performed for each message (use this action to export or process messages).</param>
+        /// <param name="exclude">List of id messages to exclude (The reception time is used as an identifier)</param>
+        /// <param name="antecedent">Filter messages considering only those prior to a certain date (useful for paging messages in blocks)</param>
+        /// <param name="take">Limit the number of messages to take. If not set, the value set in the Context.Setting.MessagePagination settings will be used. Pass the Context.Setting.KeepPost value to process all messages!</param>
+        /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "antecedent" parameter.</returns>
+        public DateTime GetMessages(Action<Message, bool> actionToExecuteForEachMessage, List<DateTime> exclude = null, DateTime antecedent = default, int? take = null)
         {
-            MessageContainerUI = Context.SecureStorage.DataStorage.BinaryDeserialize("UI" + ChatId);
-            return MessageContainerUI != null;
+            void onPost(byte[] dataPost, DateTime receptionTime) => Context.Messaging.ShowPost(dataPost, ChatId, receptionTime, actionToExecuteForEachMessage); // He converted the post (encrypted) into a message           
+            return Context.Repository.ReadPosts(ChatId, onPost, antecedent, take, exclude);
         }
 
         /// <summary>

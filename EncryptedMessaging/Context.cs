@@ -72,7 +72,6 @@ namespace EncryptedMessaging
             InvokeOnMainThread = invokeOnMainThread ?? ThreadSafeCalls;
             MessageFormat = new MessageFormat(this);
             SecureStorage = new SecureStorage.Initializer(Instances.ToString(), getSecureKeyValue, setSecureKeyValue);
-            Storage = new Storage(this);
             Setting = new Setting(this);
             Repository = new Repository(this);
 
@@ -235,7 +234,6 @@ namespace EncryptedMessaging
         internal Contact.RuntimePlatform RuntimePlatform;
         private static int Instances => ConnectivityChangeEventCollection.Count;
         public Setting Setting;
-        public readonly Storage Storage;
         public SecureStorage.Initializer SecureStorage;
         internal ContactConverter ContactConverter;
         internal Repository Repository;
