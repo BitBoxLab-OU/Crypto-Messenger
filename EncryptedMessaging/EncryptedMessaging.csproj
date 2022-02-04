@@ -65,7 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SecureStorageGit\SecureStorage\SecureStorage.csproj" />
-    <ProjectReference Include="..\TelegraphChannel\CommunicationChannel.csproj" />
+    <ProjectReference Include="..\CommunicationChannel\CommunicationChannel.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources\Dictionary.de.Designer.cs">

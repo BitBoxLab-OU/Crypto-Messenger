@@ -92,14 +92,15 @@ namespace EncryptedMessaging.Cloud
         /// Send an item to save to the cloud or to keep on the client
         /// </summary>
         /// <param name="context">Context</param>
-        /// <param name="objectName">Name of the object</param>
+        /// <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
+        /// <param name="key">An identification key allows you to identify the data by giving it a name</param>
         /// <param name="objectData">The data that represents the object</param>
         /// <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-        public static void PostObject(Context context, string objectName, string key, byte[] objectData, Contact sendToClient = null)
+        public static void PostObject(Context context, string objectTypeName, string key, byte[] objectData, Contact sendToClient = null)
         {
             var param1 = Tuple.Create((byte)Keys.CommandType, ((int)CommandType.Post).GetBytes());
             var param2 = Tuple.Create((byte)Keys.Subject, ((int)Subject.DataStorage).GetBytes());
-            var param3 = Tuple.Create((byte)Keys.Name, objectName.GetBytesFromASCII());
+            var param3 = Tuple.Create((byte)Keys.Name, objectTypeName.GetBytesFromASCII());
             var param4 = Tuple.Create((byte)Keys.Id, key.GetBytesFromASCII());
             var param5 = Tuple.Create((byte)Keys.Data, objectData);
             if (sendToClient != null)
@@ -112,14 +113,14 @@ namespace EncryptedMessaging.Cloud
         /// Delete a object in the cloud
         /// </summary>
         /// <param name="context">Context</param>
-        /// <param name="objectName">Name of the object</param>
-        /// <param name="key">Object ID</param>
+        /// <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
+        /// <param name="key">An identification key allows you to identify the data by giving it a name</param>
         /// <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-        public static void DeleteObject(Context context, string objectName, string key, Contact sendToClient = null)
+        public static void DeleteObject(Context context, string objectTypeName, string key, Contact sendToClient = null)
         {
             var param1 = Tuple.Create((byte)Keys.CommandType, ((int)CommandType.Post).GetBytes());
             var param2 = Tuple.Create((byte)Keys.Subject, ((int)Subject.DataStorage).GetBytes());
-            var param3 = Tuple.Create((byte)Keys.Name, objectName.GetBytesFromASCII());
+            var param3 = Tuple.Create((byte)Keys.Name, objectTypeName.GetBytesFromASCII());
             var param4 = Tuple.Create((byte)Keys.Id, key.GetBytesFromASCII());
             if (sendToClient != null)
                 context.Messaging.SendKeyValueCollection(sendToClient, false, false, param1, param2, param3, param4);
@@ -128,17 +129,17 @@ namespace EncryptedMessaging.Cloud
         }
 
         /// <summary>
-        /// Send an get request to cloud or client.  The response are processed in class ProcessResponsesFromCloud
+        /// Send an get request to cloud or client.  The response are processed in class ProcessResponsesFromCloud the method <see cref="ProcessResponsesFromCloud.OnData(Context, string, string, byte[])">OnData</see>
         /// </summary>
         /// <param name="context">Context</param>
-        /// <param name="objectName">Name of the object</param>
+        /// <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
         /// <param name="key">Object ID, if null then is a request of all object</param>
         /// <param name="sendToClient">Indicates the client where to send the request, if null the request will be sent to the cloud server</param>
-        public static void GetObject(Context context, string objectName, string key, Contact sendToClient = null)
+        public static void GetObject(Context context, string objectTypeName, string key, Contact sendToClient = null)
         {
             var param1 = Tuple.Create((byte)Keys.CommandType, ((int)CommandType.Get).GetBytes());
             var param2 = Tuple.Create((byte)Keys.Subject, ((int)Subject.DataStorage).GetBytes());
-            var param3 = Tuple.Create((byte)Keys.Name, objectName.GetBytesFromASCII());
+            var param3 = Tuple.Create((byte)Keys.Name, objectTypeName.GetBytesFromASCII());
             var param4 = Tuple.Create((byte)Keys.Id, key == null ? Array.Empty<byte>() : key.GetBytesFromASCII());
             if (sendToClient != null)
                 context.Messaging.SendKeyValueCollection(sendToClient, false, false, param1, param2, param3, param4);
@@ -147,14 +148,14 @@ namespace EncryptedMessaging.Cloud
         }
 
         /// <summary>
-        /// Send an get request to cloud or client. The response are processed in class ProcessResponsesFromCloud
+        /// Send an get request to cloud or client. The response are processed in class ProcessResponsesFromCloud the method <see cref="ProcessResponsesFromCloud.OnData(Context, string, string, byte[])">OnData</see>
         /// </summary>
         /// <param name="context">Context</param>
-        /// <param name="objectName">Name of the object</param>
+        /// <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
         /// <param name="sendToClient">Indicates the client where to send the request, if null the request will be sent to the cloud server</param>
-        public static void GetAllObject(Context context, string objectName, Contact sendToClient = null)
+        public static void GetAllObject(Context context, string objectTypeName, Contact sendToClient = null)
         {
-            GetObject(context, objectName, null, sendToClient);
+            GetObject(context, objectTypeName, null, sendToClient);
         }
 
 

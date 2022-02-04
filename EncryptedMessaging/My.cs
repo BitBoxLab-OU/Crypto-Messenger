@@ -7,7 +7,12 @@ namespace EncryptedMessaging
 {
     public class My
     {
-        public My(Context context) => Context = context;
+        internal My(Context context, string firebaseToken, string appleDeviceToken)
+        {
+            Context = context;
+            FirebaseToken = firebaseToken;
+            DeviceToken = appleDeviceToken;
+        }
         internal Context Context;
         private Contact _contact;
         public Contact Contact
@@ -78,12 +83,27 @@ namespace EncryptedMessaging
         public ulong GetId() => ContactConverter.GetUserId(Csp.ExportCspBlob(false));
 
         private string _name;
+        /// <summary>
+        /// Set or set the current username, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
+        /// </summary>
         public string Name
         {
             get
             {
                 if (_name == null)
-                    _name = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "MyName") as string;
+                {
+                    _name = Context.SecureStorage.Values.Get("MyName", null);
+
+                    //============================ for compatibility with old version, this code can be removed after first update of application
+                    if (_name == null)
+                    {
+                        _name = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "MyName") as string;
+                        if (_name != null)
+                            Context.SecureStorage.Values.Set("MyName", _name);
+                    }
+                    //============================
+
+                }
                 return _name;
             }
             set
@@ -91,52 +111,62 @@ namespace EncryptedMessaging
                 if (_name != value)
                 {
                     _name = value;
-                    Context.SecureStorage.ObjectStorage.SaveObject(_name, "MyName");
-                    Contact.Name = _name;
+                    Context.SecureStorage.Values.Set("MyName", _name);
                     BackupToCloud();
                 }
             }
         }
 
         private string _firebaseToken;
+        /// <summary>
+        /// It is used by firebase, to send notifications to a specific device. The sender needs this information to make the notification appear to the recipient.
+        /// </summary>
         public string FirebaseToken
         {
             get
             {
                 if (_firebaseToken == null)
-                    _firebaseToken = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "FirebaseToken") as string;
+                    _firebaseToken = Context.SecureStorage.Values.Get("FirebaseToken", null);
                 return _firebaseToken;
             }
-            set
+            private set
             {
-                if (_firebaseToken != value)
+                var lastValue = FirebaseToken;
+                if (lastValue != value)
                 {
+                    _contact = null;
                     _firebaseToken = value;
-                    Context.SecureStorage.ObjectStorage.SaveObject(_firebaseToken, "FirebaseToken");
+                    Context.SecureStorage.Values.Set("FirebaseToken", _firebaseToken);
                     Contact.FirebaseToken = _firebaseToken;
-                    BackupToCloud();
+                    if (!string.IsNullOrEmpty(lastValue)) // If the value has changed then we set a flag that will allow us to transmit the new value to all our contacts when the contact list is loaded
+                        NeedUpdateTheNotificationKeyToMyContacts = true;
                 }
             }
         }
 
         private string _deviceToken;
+        /// <summary>
+        /// In ios this is used to generate notifications for the device. Whoever sends the encrypted message needs this data to generate a notification on the device of who will receive the message.
+        /// </summary>
         public string DeviceToken
         {
             get
             {
                 if (_deviceToken == null)
-                    _deviceToken = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "DeviceToken") as string;
+                    _deviceToken = Context.SecureStorage.Values.Get("DeviceToken", null);
                 return _deviceToken;
             }
-            set
+            private set
             {
-                if (_deviceToken != value)
+                var lastValue = DeviceToken;
+                if (lastValue != value)
                 {
                     _contact = null;
                     _deviceToken = value;
-                    Context.SecureStorage.ObjectStorage.SaveObject(_deviceToken, "DeviceToken");
+                    Context.SecureStorage.Values.Set("DeviceToken", _deviceToken);
                     Contact.DeviceToken = _deviceToken;
-                    BackupToCloud();
+                    if (!string.IsNullOrEmpty(lastValue)) // If the value has changed then we set a flag that will allow us to transmit the new value to all our contacts when the contact list is loaded
+                        NeedUpdateTheNotificationKeyToMyContacts = true;
                 }
             }
         }
@@ -146,27 +176,42 @@ namespace EncryptedMessaging
         /// </summary>
         /// <returns></returns>
         public string GetPrivateKey() => Convert.ToBase64String(Csp.ExportCspBlob(true));
+
+        /// <summary>
+        /// Gets the combination of words that allow you to recover the account using bitcoin technology
+        /// </summary>
+        /// <returns>Passphrase</returns>
         public string GetPassphrase()
         {
-            var passphrase = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "MyPassPhrase") as string;
+            var passphrase = Context.SecureStorage.Values.Get("MyPassPhrase", null);
+
+            //============================ for compatibility with old version, this code can be removed after first update of application
+            if (passphrase == null) 
+            {
+                passphrase = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "MyPassPhrase") as string;
+                if (passphrase != null)
+                    Context.SecureStorage.Values.Set("MyPassPhrase", passphrase);
+            }
+            //============================
+
             if (!string.IsNullOrEmpty(passphrase))
                 return passphrase;
             passphrase = Csp.GetPassphrase();
-            Context.SecureStorage.ObjectStorage.SaveObject(passphrase, "MyPassPhrase");
+            Context.SecureStorage.Values.Set("MyPassPhrase", passphrase);           
             return passphrase;
         }
 
         /// <summary>
-        /// Set the private key and save safely 
+        /// Set the private key and save safely or save the passphrase if you passed this as a parameter
         /// </summary>
         internal void SetPrivateKey(string value)
         {
             if (_csp != null)
                 Debugger.Break(); // Set the private key only once!
-            _csp = new CryptoServiceProvider(value);
-            Context.SecureStorage.ObjectStorage.SaveObject(GetPrivateKey(), "MyPrivateKey");
+            _csp = new CryptoServiceProvider(value);            
+            Context.SecureStorage.Values.Set("MyPrivateKey", GetPrivateKey());
             if (value.Contains(" "))
-                Context.SecureStorage.ObjectStorage.SaveObject(value, "MyPassPhrase");
+                Context.SecureStorage.Values.Set("MyPassPhrase", value);
         }
 
         public byte[] GetAvatar()
@@ -187,22 +232,40 @@ namespace EncryptedMessaging
             });
         }
 
+
+        internal const int AntispamCloud = 3;
+        /// <summary>
+        /// Backup my name
+        /// When the account is recovered with the passphrase, the name is recovered.
+        /// Account recovery is done by resetting the passphrase. This is the routine that is performed following the restore when the cloud sends the name used <see cref="ProcessResponsesFromCloud.OnData(Context, string, string, byte[])">OnData</see>
+        /// </summary>
         internal void BackupToCloud()
         {
-#if DEBUG
             // to limit the Spam in cloud the contact can be backup when you add the first contact
-            if (Context.Contacts.GetContacts().Count > 2)
-#else
-			// to limit the Spam in cloud the contact can be backup when you add the first contact
-			if (Context.Contacts.GetContacts().Count != 0)
-
-#endif
+            if (Context.Contacts.ContactsList.Count >= AntispamCloud)
             {
                 if (_name != null)
                     Cloud.SendCloudCommands.PostObject(Context, "String", "MyName", SecureStorage.Cryptography.Encrypt(System.Text.Encoding.Unicode.GetBytes(_name), Csp.ExportCspBlob(true))); // Saving the name to the cloud will allow me to get it back when I recover the account with the passphrase
-                                                                                                                                                                                                //Cloud.SendCloudCommands.PostBackupUser(Context, Csp.ExportCspBlob(false), Name, FirebaseToken, DeviceToken);
+                //Cloud.SendCloudCommands.PostBackupUser(Context, Csp.ExportCspBlob(false), Name, FirebaseToken, DeviceToken);
             }
         }
 
+        /// <summary>
+        /// If the value has changed then we set a flag that will allow us to transmit the new value to all our contacts when the contact list is loaded
+        /// </summary>
+        internal bool NeedUpdateTheNotificationKeyToMyContacts;
+        /// <summary>
+        /// Update my data held to my contacts when necessary.
+        /// When my device id or firebase id change (for non-application dependent events), an update is sent to my contacts so they can continue to notify me when they send me communications and messages
+        /// </summary>
+        internal void UpdateTheNotificationKeyToMyContacts()
+        {
+            var myContact = CreateMyContact(true);
+            Context.Contacts.ForEachContact((contact) =>
+            {
+                if (!contact.IsGroup)
+                    Context.Messaging.SendContact(myContact, contact, true);
+            });
+        }
     }
 }

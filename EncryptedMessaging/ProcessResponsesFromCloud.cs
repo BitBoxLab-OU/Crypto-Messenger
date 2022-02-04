@@ -33,10 +33,11 @@ namespace EncryptedMessaging
 			{
 				var contactMessage = new ContactMessage(data);				
 				context.Contacts.AddContact(contactMessage, Contacts.SendMyContact.SendNamelessForUpdate);
+				
 			}
 			else if (objectName == "String")
 			{
-				if (key == "MyName")
+				if (key == "MyName") // Recover my name saved on the cloud (anonymously and encrypted that no one else can decrypt)
 					context.My.Name = Encoding.Unicode.GetString(data);
 			}
 		}

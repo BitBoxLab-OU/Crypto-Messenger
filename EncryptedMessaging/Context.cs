@@ -31,40 +31,35 @@ namespace EncryptedMessaging
         /// <param name="invokeOnMainThread">Method that starts the main thread: Actions that have consequences with updating the user interface must run on the main thread otherwise they cause a crash</param>
         /// <param name="getSecureKeyValue">System secure function to read passwords and keys saved with the corresponding set function</param>
         /// <param name="setSecureKeyValue">System secure function for saving passwords and keys</param>
-        /// <param name="CloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
-        /// <param name="runtimePlatform">The host operating system. If this value is not specified then it will be detected automatically (experimental)</param>
-        public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null,  string CloudPath = null, Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined)
+        /// <param name="firebaseToken">It is used by firebase, to send notifications to a specific device. The sender needs this information to make the notification appear to the recipient.</param>
+        /// <param name="appleDeviceToken">In ios this is used to generate notifications for the device. Whoever sends the encrypted message needs this data to generate a notification on the device of who will receive the message.</param>
+        /// <param name="cloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
+        public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, string firebaseToken = null, string appleDeviceToken = null, string cloudPath = null)
         {
             _internetAccess = internetAccess ?? NetworkInterface.GetIsNetworkAvailable();
 #if DEBUG
-            if (CloudPath != null && !isServer)
+            if (cloudPath != null && !isServer)
                 System.Diagnostics.Debugger.Break(); // Set up cloud path functions for server applications only
 #endif
-            Cloud.ReceiveCloudCommands.SetCustomPath(CloudPath, isServer);
+            Cloud.ReceiveCloudCommands.SetCustomPath(cloudPath, isServer);
             PingAddress = new UriBuilder(entryPoint).Uri;
-            if (runtimePlatform == Contact.RuntimePlatform.Undefined)
-            {
-                var platform = Environment.OSVersion.Platform;
-                if (platform == PlatformID.Win32Windows || platform == PlatformID.Win32NT || platform == PlatformID.WinCE || platform == PlatformID.Xbox)
-                {
-                    runtimePlatform = Contact.RuntimePlatform.Windows;
-                }
-                else if (platform == PlatformID.Unix || platform == PlatformID.MacOSX)
-                {
-                    //if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
-                    //{
-                    //    // Do something
-                    //}
-                    var ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties().ToString().ToLower();
-                    if (ipGlobalProperties.Contains(".android"))
-                        runtimePlatform = Contact.RuntimePlatform.Android;
-                    else if (ipGlobalProperties.Contains(".ios")) // !!!!!!!!!!!!!!!!! ATTENTION!! VERIFY IN iOS !!!!!!!!!!!!!!!!!!!!!!
-                        runtimePlatform = Contact.RuntimePlatform.iOS;
-                    else
-                        runtimePlatform = Contact.RuntimePlatform.Unix;
-                }
-            }
+            Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined;
 
+            var platform = Environment.OSVersion.Platform;
+            if (platform == PlatformID.Win32Windows || platform == PlatformID.Win32NT || platform == PlatformID.WinCE || platform == PlatformID.Xbox)
+            {
+                runtimePlatform = Contact.RuntimePlatform.Windows;
+            }
+            else if (platform == PlatformID.Unix || platform == PlatformID.MacOSX)
+            {
+                var ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties().ToString().ToLower();
+                if (ipGlobalProperties.Contains(".android"))
+                    runtimePlatform = Contact.RuntimePlatform.Android;
+                else if (appleDeviceToken != null)
+                    runtimePlatform = Contact.RuntimePlatform.iOS;
+                else
+                    runtimePlatform = Contact.RuntimePlatform.Unix;
+            }
             RuntimePlatform = runtimePlatform;
             IsServer = isServer;
             SessionTimeout = isServer ? DefaultServerSessionTimeout : Timeout.InfiniteTimeSpan;
@@ -74,9 +69,8 @@ namespace EncryptedMessaging
             SecureStorage = new SecureStorage.Initializer(Instances.ToString(), getSecureKeyValue, setSecureKeyValue);
             Setting = new Setting(this);
             Repository = new Repository(this);
-
             ContactConverter = new ContactConverter(this);
-            My = new My(this);
+            My = new My(this, firebaseToken, appleDeviceToken);
 
 #if DEBUG_A
             privateKeyOrPassphrase = privateKeyOrPassphrase ?? PassPhrase_A;
@@ -153,8 +147,8 @@ namespace EncryptedMessaging
         public event LastReadedTimeChangeEvent OnLastReadedTimeChange;
         internal void OnLastReadedTimeChangeInvoke(Contact contact, ulong participantId, DateTime lastRadTime)
         {
-            InvokeOnMainThread(() => OnLastReadedTimeChange?.Invoke(contact, participantId, lastRadTime));            
-        }  
+            InvokeOnMainThread(() => OnLastReadedTimeChange?.Invoke(contact, participantId, lastRadTime));
+        }
         /// <summary>
         /// Delegate for the event that notifies when messages are sent
         /// </summary>
@@ -196,6 +190,8 @@ namespace EncryptedMessaging
         {
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Contacts.LoadContacts(IsRestored);
+            if (My.NeedUpdateTheNotificationKeyToMyContacts)
+                My.UpdateTheNotificationKeyToMyContacts();
             if (IsRestored && !IsServer)
                 Contacts.RestoreContactFromCloud();
             OnConnectivityChange(_internetAccess);

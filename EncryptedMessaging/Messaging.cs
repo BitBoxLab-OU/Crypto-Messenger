@@ -419,7 +419,8 @@ namespace EncryptedMessaging
         /// To read the data on the target client: var values = Functions.SplitData(data);
         /// </summary>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
-        /// <param name="keyValue">Data blocks not exceeding 255 bytes each</param>
+        /// <param name="valueMustBeLessOf256Bytes">Limits the length of the saved values by saving communication bandwidth for data which is generally small</param>
+        /// <param name="keyValue">Data blocks, not exceeding 255 bytes each, if specified by the valueMustBeLessOf256Bytes parameter</param>
         public void SendKeyValueCollectionToCloud(bool directlyWithoutSpooler = false, bool valueMustBeLessOf256Bytes = false, params Tuple<byte, byte[]>[] keyValue)
         {
             SendKeyValueCollection(Context.Contacts.GetCloudContact(), directlyWithoutSpooler, valueMustBeLessOf256Bytes, keyValue);

@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31911.196
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EncryptedMessaging", "EncryptedMessaging\EncryptedMessaging.csproj", "{EDBF38F8-84FB-4BBF-9ED9-45749434C657}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommunicationChannel", "TelegraphChannel\CommunicationChannel.csproj", "{8473EAE9-D4D2-4AD3-BE72-6F895CD0CC02}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommunicationChannel", "CommunicationChannel\CommunicationChannel.csproj", "{8473EAE9-D4D2-4AD3-BE72-6F895CD0CC02}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SecureStorage", "..\SecureStorageGit\SecureStorage\SecureStorage.csproj", "{45BEC1B6-4DE4-45F1-8A38-8325AB910C9B}"
 EndProject

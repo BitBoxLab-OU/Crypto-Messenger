@@ -240,9 +240,9 @@ namespace EncryptedMessaging
                     duplicate.Name = contact.Name;
                     return true;
                 }
-                var backUpMyContact = !contact.IsServer && contact.IsVisible && ContactsList.Count == 0; // The first time I add a contact, I make my first cloud backup. It is not backed up first to save space for test accounts
                 ContactsList.Add(contact);
                 OnContactAdded?.Invoke(contact);
+                var backUpMyContact = !contact.IsServer && contact.IsVisible && ContactsList.Count == My.AntispamCloud; // When using the application is reasonable, back up my data
                 if (backUpMyContact)
                     Context.My.BackupToCloud();
             }
@@ -284,11 +284,23 @@ namespace EncryptedMessaging
             return true;
         }
 
+        /// <summary>
+        /// Enumerator that specifies whether when a contact is added to him I should send mine, and for what purpose
+        /// </summary>
         public enum SendMyContact
         {
+            /// <summary>
+            /// Do not send my contact
+            /// </summary>
             None,
-            Send, // Send my contact to another contact, the contact contains my real name information
-            SendNamelessForUpdate, // It is used to update the firebase tokens and the device id without changing the contact name. This is required when a user reinstalls the application.
+            /// <summary>
+            /// Send my contact to another contact, the contact contains my real name information
+            /// </summary>
+            Send,
+            /// <summary>
+            /// It is used to update the firebase tokens and the device id without changing the contact name. This is required when a user reinstalls the application.
+            /// </summary>
+            SendNamelessForUpdate,
         }
 
         /// <summary>
