@@ -2,19 +2,40 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// This class allows you to access all the information about the user who is using the application: the contact, if his cryptographic keys, the tokens of his device for notifications, the user id, etc.
+    /// </summary>
     public class My
     {
-        internal My(Context context, string firebaseToken, string appleDeviceToken)
+        internal My(Context context, Func<string> getFirebaseToken, Func<string> getAppleDeviceToken)
         {
             Context = context;
-            FirebaseToken = firebaseToken;
-            DeviceToken = appleDeviceToken;
+            CounterTask = 1 + (getFirebaseToken == null ? 0 : 1) + (getAppleDeviceToken == null ? 0 : 1); // Create a countdown to check when all tasks have finished
+            if (getFirebaseToken != null)
+                Task.Run(() =>
+                {
+                    FirebaseToken = getFirebaseToken();
+                    CheckUpdateTheNotificationKeyToMyContacts();
+                });
+            if (getAppleDeviceToken != null)
+                Task.Run(() =>
+                {
+                    DeviceToken = getAppleDeviceToken();
+                    CheckUpdateTheNotificationKeyToMyContacts();
+                });
         }
+        private int CounterTask; // Create a countdown to check when all tasks have finished In order to perform operations that must be performed at the end of all initialization tasks
+
         internal Context Context;
         private Contact _contact;
+
+        /// <summary>
+        /// Gets my contact (the contact of the user using the application)
+        /// </summary>
         public Contact Contact
         {
             get
@@ -186,7 +207,7 @@ namespace EncryptedMessaging
             var passphrase = Context.SecureStorage.Values.Get("MyPassPhrase", null);
 
             //============================ for compatibility with old version, this code can be removed after first update of application
-            if (passphrase == null) 
+            if (passphrase == null)
             {
                 passphrase = Context.SecureStorage.ObjectStorage.LoadObject(typeof(string), "MyPassPhrase") as string;
                 if (passphrase != null)
@@ -197,7 +218,7 @@ namespace EncryptedMessaging
             if (!string.IsNullOrEmpty(passphrase))
                 return passphrase;
             passphrase = Csp.GetPassphrase();
-            Context.SecureStorage.Values.Set("MyPassPhrase", passphrase);           
+            Context.SecureStorage.Values.Set("MyPassPhrase", passphrase);
             return passphrase;
         }
 
@@ -208,18 +229,26 @@ namespace EncryptedMessaging
         {
             if (_csp != null)
                 Debugger.Break(); // Set the private key only once!
-            _csp = new CryptoServiceProvider(value);            
+            _csp = new CryptoServiceProvider(value);
             Context.SecureStorage.Values.Set("MyPrivateKey", GetPrivateKey());
             if (value.Contains(" "))
                 Context.SecureStorage.Values.Set("MyPassPhrase", value);
         }
 
+        /// <summary>
+        /// Gets the avatar (the image of the user photo in the form of a byte array)
+        /// </summary>
+        /// <returns></returns>
         public byte[] GetAvatar()
         {
             var png = Context.SecureStorage.DataStorage.LoadData("avatar");
             return png;
         }
 
+        /// <summary>
+        /// Sets the avatar (the image of the user photo in the form of a byte array)
+        /// </summary>
+        /// <param name="png"></param>
         public void SetAvatar(byte[] png)
         {
             Context.SecureStorage.DataStorage.SaveData(png, "avatar");
@@ -258,7 +287,7 @@ namespace EncryptedMessaging
         /// Update my data held to my contacts when necessary.
         /// When my device id or firebase id change (for non-application dependent events), an update is sent to my contacts so they can continue to notify me when they send me communications and messages
         /// </summary>
-        internal void UpdateTheNotificationKeyToMyContacts()
+        private void UpdateTheNotificationKeyToMyContacts()
         {
             var myContact = CreateMyContact(true);
             Context.Contacts.ForEachContact((contact) =>
@@ -266,6 +295,13 @@ namespace EncryptedMessaging
                 if (!contact.IsGroup)
                     Context.Messaging.SendContact(myContact, contact, true);
             });
+        }
+
+        internal void CheckUpdateTheNotificationKeyToMyContacts()
+        {
+            CounterTask--;
+            if (CounterTask == 0 && NeedUpdateTheNotificationKeyToMyContacts)
+                UpdateTheNotificationKeyToMyContacts();
         }
     }
 }

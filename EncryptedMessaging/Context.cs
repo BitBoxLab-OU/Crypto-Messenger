@@ -31,10 +31,10 @@ namespace EncryptedMessaging
         /// <param name="invokeOnMainThread">Method that starts the main thread: Actions that have consequences with updating the user interface must run on the main thread otherwise they cause a crash</param>
         /// <param name="getSecureKeyValue">System secure function to read passwords and keys saved with the corresponding set function</param>
         /// <param name="setSecureKeyValue">System secure function for saving passwords and keys</param>
-        /// <param name="firebaseToken">It is used by firebase, to send notifications to a specific device. The sender needs this information to make the notification appear to the recipient.</param>
-        /// <param name="appleDeviceToken">In ios this is used to generate notifications for the device. Whoever sends the encrypted message needs this data to generate a notification on the device of who will receive the message.</param>
+        /// <param name="getFirebaseToken">Function to get FirebaseToken (the function is passed and not the value, so as not to block the main thread as this sometimes takes a long time). FirebaseToken is used by firebase, to send notifications to a specific device. The sender needs this information to make the notification appear to the recipient.</param>
+        /// <param name="getAppleDeviceToken">Function to get AppleDeviceToken (the function is passed and not the value, so as not to block the main thread as this sometimes takes a long time). In ios AppleDeviceToken is used to generate notifications for the device. Whoever sends the encrypted message needs this data to generate a notification on the device of who will receive the message.</param>
         /// <param name="cloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
-        public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, string firebaseToken = null, string appleDeviceToken = null, string cloudPath = null)
+        public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, Func<string> getFirebaseToken = null, Func<string> getAppleDeviceToken = null, string cloudPath = null)
         {
             _internetAccess = internetAccess ?? NetworkInterface.GetIsNetworkAvailable();
 #if DEBUG
@@ -55,7 +55,7 @@ namespace EncryptedMessaging
                 var ipGlobalProperties = IPGlobalProperties.GetIPGlobalProperties().ToString().ToLower();
                 if (ipGlobalProperties.Contains(".android"))
                     runtimePlatform = Contact.RuntimePlatform.Android;
-                else if (appleDeviceToken != null)
+                else if (getAppleDeviceToken != null)
                     runtimePlatform = Contact.RuntimePlatform.iOS;
                 else
                     runtimePlatform = Contact.RuntimePlatform.Unix;
@@ -70,7 +70,7 @@ namespace EncryptedMessaging
             Setting = new Setting(this);
             Repository = new Repository(this);
             ContactConverter = new ContactConverter(this);
-            My = new My(this, firebaseToken, appleDeviceToken);
+            My = new My(this, getFirebaseToken, getAppleDeviceToken);
 
 #if DEBUG_A
             privateKeyOrPassphrase = privateKeyOrPassphrase ?? PassPhrase_A;
@@ -190,8 +190,7 @@ namespace EncryptedMessaging
         {
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Contacts.LoadContacts(IsRestored);
-            if (My.NeedUpdateTheNotificationKeyToMyContacts)
-                My.UpdateTheNotificationKeyToMyContacts();
+            My.CheckUpdateTheNotificationKeyToMyContacts();
             if (IsRestored && !IsServer)
                 Contacts.RestoreContactFromCloud();
             OnConnectivityChange(_internetAccess);
