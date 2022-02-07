@@ -83,18 +83,11 @@ namespace EncryptedMessaging
             Contacts = new Contacts(this);
             var keepConnected = runtimePlatform != Contact.RuntimePlatform.Android && runtimePlatform != Contact.RuntimePlatform.iOS;
             Channell = new Channell(entryPoint, Domain, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
-
-            //Contacts.LoadContacts();
             if (Instances == 0)
                 new Task(() => _ = Time.CurrentTimeGMT).Start();
             IsRestored = !string.IsNullOrEmpty(privateKeyOrPassphrase);
             ConnectivityChangeEventCollection.Add((bool connectivity) => Channell.InternetAccess = connectivity);
-
-
             ThreadPool.QueueUserWorkItem(new WaitCallback(RunAfterInstanceCreate));
-
-            //var afterInstanceCreate = new Thread((obj) => RunAfterInstanceCreate(obj)) { IsBackground = true };                    
-            //afterInstanceCreate.Start(null);
         }
         /// <summary>
         /// Delegate for the action to be taken when messages arrive
@@ -186,16 +179,39 @@ namespace EncryptedMessaging
 #endif
 
         private readonly bool IsRestored;
+
+        /// <summary>
+        /// What to do when the context instance has been created and released
+        /// Do not put instructions here that send messages (otherwise the application crashes due to isReady which will remain false)
+        /// </summary>
+        /// <param name="obj"></param>
         private void RunAfterInstanceCreate(object obj)
         {
+#if DEBUG
+            AfterInstanceThread = Thread.CurrentThread;
+#endif
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Contacts.LoadContacts(IsRestored);
             My.CheckUpdateTheNotificationKeyToMyContacts();
+            OnConnectivityChange(_internetAccess);
+#if DEBUG
+            AfterInstanceThread = null;
+#endif
+            IsReady = true;
+            RunAfterInitialization();
+            OnContextIsInitialized?.Invoke(this);
+        }
+#if DEBUG
+        internal static Thread AfterInstanceThread;
+#endif
+        /// <summary>
+        /// Put here any operations that should send messages when after the context instance has been created
+        /// </summary>
+        private void RunAfterInitialization()
+        {
+            // Put here only instructions that send messages
             if (IsRestored && !IsServer)
                 Contacts.RestoreContactFromCloud();
-            OnConnectivityChange(_internetAccess);
-            IsReady = true;
-            OnContextIsInitialized?.Invoke(this);
         }
 
         /// <summary>
@@ -205,6 +221,7 @@ namespace EncryptedMessaging
         public static Action<Context> OnContextIsInitialized;
 
         public bool IsReady { get; private set; }
+
 
         private static readonly List<Action<bool>> ConnectivityChangeEventCollection = new List<Action<bool>>();
 

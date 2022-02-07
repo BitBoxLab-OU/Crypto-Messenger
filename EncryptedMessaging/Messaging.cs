@@ -212,6 +212,8 @@ namespace EncryptedMessaging
                 Debugger.Break(); // toContact and toIdUsers cannot be set simultaneously
             if (toIdUsers != null && encrypted)
                 Debugger.Break(); // It is not possible to use encryption if you do not have the contact
+            if (Context.AfterInstanceThread == Thread.CurrentThread)
+                Debugger.Break(); // It is not allowed to send messages from the RunAfterInstanceCreate method, move the sending of messages into RunAfterInitialization
 #endif
             if (!Context.IsReady)
             {
