@@ -10,7 +10,6 @@ namespace CommunicationChannel
 {
     internal class Tcp
     {
-        internal static List<Tcp> Tcps = new List<Tcp>();
         internal Tcp(Channell channell)
         {
             Channell = channell;
@@ -18,7 +17,6 @@ namespace CommunicationChannel
             _timerAutoDisconnect = new Timer(OnTimerAutoDisconnect, null, Timeout.Infinite, Timeout.Infinite);
             TimerKeepAlive = new Timer(OnTimerKeepAlive, null, Timeout.Infinite, Timeout.Infinite);
             SendTimeOut = new Timer(ExecuteOnSendTimeout, null, Timeout.Infinite, Timeout.Infinite);
-            Tcps.Add(this);
         }
         internal readonly Channell Channell;
 
@@ -95,6 +93,10 @@ namespace CommunicationChannel
 
         private const int _maxDataLength = 64000000; //64 MB - max data length enable to received the server
         internal TcpClient Client;
+        /// <summary>
+        /// Send the data, which will be parked in the spooler, cannot be forwarded immediately: If there is a queue or if there is no internet line the data will be parked.
+        /// </summary>
+        /// <param name="data">Data to be sent</param>
         public void SendData(byte[] data)
         {
             Channell.Spooler.AddToQuee(data);
@@ -108,6 +110,12 @@ namespace CommunicationChannel
         }
         internal List<byte[]> DataAwaitingConfirmation = new List<byte[]>();
         internal int ToWrite;
+        /// <summary>
+        /// Send data to server (router) without going through the spooler
+        /// </summary>
+        /// <param name="data">Data to be sent</param>
+        /// <param name="executeOnConfirmReceipt">Action to be taken when the router has successfully received the data sent</param>
+        /// <param name="directlyWithoutSpooler">If true, it indicates to the router (server) that it should not park the data if the receiver is not connected</param>
         internal void ExecuteSendData(byte[] data, Action executeOnConfirmReceipt = null, bool directlyWithoutSpooler = false)
         {
             var dataLength = data.Length;
@@ -186,6 +194,8 @@ namespace CommunicationChannel
         /// </summary>
         internal bool Connect()
         {
+            if (!Channell.ContextIsReady())
+                return false;
             lock (this)
             {
                 if (!IsConnected() && Channell.InternetAccess)
@@ -408,6 +418,8 @@ namespace CommunicationChannel
 
         public void Disconnect(bool tryConnectAgain = true)
         {
+            if (!Channell.ContextIsReady())
+                return;
             lock (this)
             {
                 if (Client != null) // Do not disconnect again

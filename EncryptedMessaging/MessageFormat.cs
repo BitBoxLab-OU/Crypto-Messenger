@@ -230,7 +230,6 @@ namespace EncryptedMessaging
             set
             { Context.SecureStorage.ObjectStorage.SaveObject(value, "t" + PostId); }
         }
-
     }
 
     public class MessageFormat
@@ -239,68 +238,84 @@ namespace EncryptedMessaging
         {
             _context = context;
         }
-        private Context _context;
+        private readonly Context _context;
 
-
+        /// <summary>
+        /// It is a numerator indicating the data type of the message. It is used to indicate what the transmitted or received data refers to. Each message can contain the data in a byte array, and the typo allows you to correctly reconstruct the message by taking the data.
+        /// </summary>
         public enum MessageType : byte
         {
             // NOTE: If you add a new type and want to make it visible also in the messages view, then you must also add its description in the _messageDescription function 
+            /// <summary>Text in unicode format</summary>
             Text,
+            /// <summary>An image</summary>
             Image,
+            /// <summary>An audio message mp3</summary>
             Audio,
+            /// <summary>A contact to add to the address book</summary>
             Contact,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             AudioCall,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             VideoCall,
+            /// <summary>Geographic location</summary>            
             Location,
+            /// <summary>PDF document</summary>
             PdfDocument,
+            /// <summary>Used to notify that messages have been read</summary>
             LastReading,
+            /// <summary>Asks to delete a message</summary>
             Delete,
-            /// <summary>
-            /// array of bytes[], Each bytes cannot exceed 256 bytes - Use the Functions.SplitIncomingData method to get the array
-            /// </summary>
+            /// <summary>Array of bytes[], Each bytes cannot exceed 256 bytes - Use the Functions.SplitIncomingData method to get the array</summary>
             SmallData,
-            /// <summary>
-            /// array of bytes[] - Use the Functions.SplitIncomingData method to get the array
-            /// </summary>
+            /// <summary>Array of bytes[] - Use the Functions.SplitIncomingData method to get the array</summary>
             Data,
-            /// <summary>
-            /// Used to send the name with which the contract is registered in my address book, so I can have notifications with the name used locally in my contacts
-            /// </summary>
+            /// <summary>Used to send the name with which the contract is registered in my address book, so I can have notifications with the name used locally in my contacts</summary>
             NameChange,
             ContactStatus,
             Binary,
-            /// <summary>
-            /// used to send simple information (See the InformType enumerator for a list of the information it passes)
-            /// </summary>
+            /// <summary>Used to send simple information (See the InformType enumerator for a list of the information it passes)</summary>
             Inform,
             PhoneContact,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             StartAudioGroupCall,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             StartVideoGroupCall,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             EndCall,
+            /// <summary>Obsolete</summary>
+            [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]
             DeclinedCall,
             /// <summary>
             /// Used to send commands for sub applications (plugins, modules, additional features): Each sub application has an ID and a command that must be sent with the messaging protocol.
-            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[])"/>"
+            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, ushort, ushort, bool, bool, byte[])"/>"
             /// </summary>
             SubApplicationCommandWithData,
             /// <summary>
             /// Used to send commands for sub applications (plugins, modules, additional features): Each sub application has an ID and a command that must be sent with the messaging protocol.
-            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, short, short, bool, bool, byte[][])"/>"
+            /// See: "<see cref="Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact, ushort, ushort, bool, bool, byte[][])"/>"
             /// </summary>
             SubApplicationCommandWithParameters,
             /// <inheritdoc cref="Messaging.ShareEncryptedContent(EncryptedMessaging.Contact, string, byte[], string, string)"/>
             ShareEncryptedContent,
-            /// <inheritdoc cref="Messaging.ReplyToMessage(EncryptedMessaging.Contact, ulong, string)"/>
+            /// <summary>Used internally to indicate that the message is a reply to another previous message</summary>
             ReplyToMessage,
         }
-
+        /// <summary>
+        /// Used to notify an event
+        /// </summary>
         public enum InformType : byte
         {
-            AvatarHasUpdated // This info is sent to the contact to inform me that my avatar has been changed
+            /// <summary>This info is sent to the contact to inform me that my avatar has been changed</summary>
+            AvatarHasUpdated
         }
 
-
-        private static Dictionary<MessageType, string> _messageDescription()
+        private static Dictionary<MessageType, string> MessageDescriptionInitializer()
         {
             // If you want to add new items visible to the view, you need to add their description here 
             // NOTE: Please do not add descriptions, for post types that should not be visible in the view !!
@@ -324,8 +339,10 @@ namespace EncryptedMessaging
             };
             return dictionary;
         }
-        public static Dictionary<MessageType, string> MessageDescription = _messageDescription();
-
+        /// <summary>
+        /// Useful for identifying which messages have a visual effect in the chat
+        /// </summary>
+        internal static Dictionary<MessageType, string> MessageDescription = MessageDescriptionInitializer();
 
         /// <summary>
         /// Reads a post in binary format with the encrypted data and turns it into a clear message

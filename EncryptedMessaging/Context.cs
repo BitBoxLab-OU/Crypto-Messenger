@@ -26,7 +26,7 @@ namespace EncryptedMessaging
         /// <param name="networkName">The name of the infrastructure. For tests we recommend using "testnet"</param>
         /// <param name="multipleChatModes">If this mode is enabled there will be multiple chat rooms simultaneously, all archived messages will be preloaded with the initialization of this library, this involves a large use of memory but a better user experience. Otherwise, only one char room will be managed at a time, archived messages will be loaded only when you enter the chat, this mode consumes less memory.</param>
         /// <param name="privateKeyOrPassphrase"></param>
-        /// <param name="isServer"></param>
+        /// <param name="isServer">Indicates if a server is initialized: The server has some differences compared to the device which are: It does not store contacts (contacts are acquired during the session and when it expires they are deleted, so the contacts are not even synchronized on the cloud, there is no is the backup and restore that instead occurs for applications on devices).</param>
         /// <param name="internetAccess">True if network is available</param>
         /// <param name="invokeOnMainThread">Method that starts the main thread: Actions that have consequences with updating the user interface must run on the main thread otherwise they cause a crash</param>
         /// <param name="getSecureKeyValue">System secure function to read passwords and keys saved with the corresponding set function</param>
@@ -36,6 +36,7 @@ namespace EncryptedMessaging
         /// <param name="cloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
         public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, Func<string> getFirebaseToken = null, Func<string> getAppleDeviceToken = null, string cloudPath = null)
         {
+            Contexts.Add(this);
             _internetAccess = internetAccess ?? NetworkInterface.GetIsNetworkAvailable();
 #if DEBUG
             if (cloudPath != null && !isServer)
@@ -48,6 +49,12 @@ namespace EncryptedMessaging
             var platform = Environment.OSVersion.Platform;
             if (platform == PlatformID.Win32Windows || platform == PlatformID.Win32NT || platform == PlatformID.WinCE || platform == PlatformID.Xbox)
             {
+                var Framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+                if (isServer == false && (Framework.Contains(" 3.") || Framework.Contains(" 5.")))
+                {
+                    System.Diagnostics.Debug.WriteLine("You probably want to use this library for a server application but isServer is set to false!");
+                    System.Diagnostics.Debugger.Break();
+                }
                 runtimePlatform = Contact.RuntimePlatform.Windows;
             }
             else if (platform == PlatformID.Unix || platform == PlatformID.MacOSX)
@@ -82,11 +89,10 @@ namespace EncryptedMessaging
             Messaging = new Messaging(this, multipleChatModes);
             Contacts = new Contacts(this);
             var keepConnected = runtimePlatform != Contact.RuntimePlatform.Android && runtimePlatform != Contact.RuntimePlatform.iOS;
-            Channell = new Channell(entryPoint, Domain, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
+            Channell = new Channell(entryPoint, Domain, () => IsReady, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
             if (Instances == 0)
                 new Task(() => _ = Time.CurrentTimeGMT).Start();
             IsRestored = !string.IsNullOrEmpty(privateKeyOrPassphrase);
-            ConnectivityChangeEventCollection.Add((bool connectivity) => Channell.InternetAccess = connectivity);
             ThreadPool.QueueUserWorkItem(new WaitCallback(RunAfterInstanceCreate));
         }
         /// <summary>
@@ -140,7 +146,8 @@ namespace EncryptedMessaging
         public event LastReadedTimeChangeEvent OnLastReadedTimeChange;
         internal void OnLastReadedTimeChangeInvoke(Contact contact, ulong participantId, DateTime lastRadTime)
         {
-            InvokeOnMainThread(() => OnLastReadedTimeChange?.Invoke(contact, participantId, lastRadTime));
+            if (OnLastReadedTimeChange != null)
+                InvokeOnMainThread(() => OnLastReadedTimeChange.Invoke(contact, participantId, lastRadTime));
         }
         /// <summary>
         /// Delegate for the event that notifies when messages are sent
@@ -149,13 +156,15 @@ namespace EncryptedMessaging
         /// <param name="deliveredTime"></param>
         /// <param name="isMy"></param>
         public delegate void MessageDeliveredEvent(Contact contact, DateTime deliveredTime, bool isMy);
+
         /// <summary>
-        /// Event that occurs when a message has been sent
+        /// Event that occurs when a message has been sent. Use this event to notify the host application when a notification needs to be sent to the recipient.
         /// </summary>
         public event MessageDeliveredEvent OnMessageDelivered;
         internal void OnMessageDeliveredInvoke(Contact contact, DateTime deliveredTime, bool isMy)
         {
-            OnMessageDelivered?.Invoke(contact, deliveredTime, isMy);
+            if (OnMessageDelivered != null)
+                Task.Run(() => OnMessageDelivered?.Invoke(contact, deliveredTime, isMy));
         }
 
         /// <summary>
@@ -192,8 +201,6 @@ namespace EncryptedMessaging
 #endif
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Contacts.LoadContacts(IsRestored);
-            My.CheckUpdateTheNotificationKeyToMyContacts();
-            OnConnectivityChange(_internetAccess);
 #if DEBUG
             AfterInstanceThread = null;
 #endif
@@ -209,8 +216,11 @@ namespace EncryptedMessaging
         /// </summary>
         private void RunAfterInitialization()
         {
+            OnConnectivityChange(_internetAccess);
             // Put here only instructions that send messages
-            if (IsRestored && !IsServer)
+            if (!IsRestored)
+                My.CheckUpdateTheNotificationKeyToMyContacts();
+            else if (!IsServer)
                 Contacts.RestoreContactFromCloud();
         }
 
@@ -220,10 +230,13 @@ namespace EncryptedMessaging
         /// </summary>
         public static Action<Context> OnContextIsInitialized;
 
-        public bool IsReady { get; private set; }
+        internal bool IsReady
+        {
+            get { return Messaging != null && Messaging.SendMessageQueue == null; }
+            private set { Messaging.SendMessagesInQueue(); }
+        }
 
-
-        private static readonly List<Action<bool>> ConnectivityChangeEventCollection = new List<Action<bool>>();
+        private static readonly List<Context> Contexts = new List<Context>();
 
         private static bool _internetAccess;
 
@@ -240,11 +253,11 @@ namespace EncryptedMessaging
         public static void OnConnectivityChange(bool Connectivity)
         {
             _internetAccess = Connectivity;
-            ConnectivityChangeEventCollection.ForEach(x => x.Invoke(Connectivity));
+            Channell.InternetAccess = _internetAccess;
         }
 
         internal Contact.RuntimePlatform RuntimePlatform;
-        private static int Instances => ConnectivityChangeEventCollection.Count;
+        private static int Instances => Contexts.Count;
         public Setting Setting;
         public SecureStorage.Initializer SecureStorage;
         internal ContactConverter ContactConverter;
@@ -262,7 +275,11 @@ namespace EncryptedMessaging
         // Through this we can program an action that is triggered when a message arrives from a certain chat id
 
         internal int Domain;
-        public Channell Channell;
+        internal Channell Channell;
+        /// <summary>
+        /// Returns the current status of the connection with the router/server
+        /// </summary>
+        public bool IsConnected => Channell != null && Channell.IsConnected();
         public static void ReEstablishConnection(bool iMSureThereIsConnection = false)
         {
             if (iMSureThereIsConnection)
@@ -274,6 +291,6 @@ namespace EncryptedMessaging
         /// Use this property to call the main thread when needed:
         /// The main thread must be used whenever the user interface needs to be updated, for example, any operation on an ObservableCollection that changes elements must be done by the main thread,  otherwise rendering on the graphical interface will generate an error.
         /// </summary>
-        public static Action<Action> InvokeOnMainThread;
+        public readonly Action<Action> InvokeOnMainThread;
     }
 }

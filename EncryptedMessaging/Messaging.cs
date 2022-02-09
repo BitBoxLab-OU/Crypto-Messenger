@@ -191,13 +191,32 @@ namespace EncryptedMessaging
             if (!isMy)
                 message.Contact.RemoteUnreaded = 0;
         }
+        internal class SendMessageParameters
+        {
+            /// <summary>The type of data</summary>
+            public MessageType Type;
+            /// <summary>The body of the data in binary format</summary>
+            public byte[] Data;
+            /// <summary>Recipient of the message. ToContact and toIdUsers cannot be set simultaneousl</summary>
+            public Contact ToContact;
+            /// <summary>The post Id property of the message you want to reply to</summary>
+            public ulong? ReplyToPostId;
+            /// <summary>Set this value if toContact is null, that is, if the message is not encrypted</summary>
+            public ulong? ChatId;
+            /// <summary>Id of the members of the group the message is intended for. ToContact and toIdUsers cannot be set simultaneously</summary>
+            public ulong[] ToIdUsers;
+            /// <summary>If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</summary>
+            public bool DirectlyWithoutSpooler;
+            /// <summary>Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</summary>
+            public bool Encrypted = true;
+        }
 
         /// <summary>
         /// Send the message to all participants in the current chat room, and save a copy of the local storage
         /// </summary>
         /// <param name="type">The type of data</param>
         /// <param name="data">The body of the data in binary format</param>
-        /// <param name="toContact">recipient of the message. ToContact and toIdUsers cannot be set simultaneously</param>
+        /// <param name="toContact">Recipient of the message. ToContact and toIdUsers cannot be set simultaneousl</param>
         /// <param name="replyToPostId">The post Id property of the message you want to reply to</param>
         /// <param name="chatId">Set this value if toContact is null, that is, if the message is not encrypted</param>
         /// <param name="toIdUsers">Id of the members of the group the message is intended for. ToContact and toIdUsers cannot be set simultaneously</param>
@@ -205,26 +224,52 @@ namespace EncryptedMessaging
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         private void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? replyToPostId = null, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true)
         {
+            SendMessage(new SendMessageParameters()
+            {
+                Type = type,
+                Data = data,
+                ToContact = toContact,
+                ReplyToPostId = replyToPostId,
+                ChatId = chatId,
+                ToIdUsers = toIdUsers,
+                DirectlyWithoutSpooler = directlyWithoutSpooler,
+                Encrypted = encrypted,
+            });
+        }
+
+        internal Queue<SendMessageParameters> SendMessageQueue = new Queue<SendMessageParameters>();
+
+        internal void SendMessagesInQueue()
+        {
+            var queue = SendMessageQueue;
+            SendMessageQueue = null;
+            if (queue != null)
+                while (queue.Count != 0)
+                { SendMessage(queue.Dequeue()); }
+        }
+
+        internal void SendMessage(SendMessageParameters @params)
+        {
 #if DEBUG
-            if (replyToPostId != null && !MessageDescription.ContainsKey(type))
+            if (@params.ReplyToPostId != null && !MessageDescription.ContainsKey(@params.Type))
                 Debugger.Break(); // It is recommended that you use reply to a message, only with messages that can be viewed in the chat
-            if (toContact != null && toIdUsers != null)
+            if (@params.ToContact != null && @params.ToIdUsers != null)
                 Debugger.Break(); // toContact and toIdUsers cannot be set simultaneously
-            if (toIdUsers != null && encrypted)
+            if (@params.ToIdUsers != null && @params.Encrypted)
                 Debugger.Break(); // It is not possible to use encryption if you do not have the contact
             if (Context.AfterInstanceThread == Thread.CurrentThread)
                 Debugger.Break(); // It is not allowed to send messages from the RunAfterInstanceCreate method, move the sending of messages into RunAfterInitialization
 #endif
             if (!Context.IsReady)
             {
-                Debugger.Break(); // Do not send messages before the context is not initialized, the presence of connectivity is not clear at this stage. Write the code inside OnInitializedAndConnectivityIsOn () in Context if you need to send data when connectivity appears.
-                SpinWait.SpinUntil(() => !Context.IsReady);
+                SendMessageQueue.Enqueue(@params);
+                return;
             }
 
-            if (toContact?.IsServer == true && encrypted && !AntiRecursive) // The servers don't have the client's public key because they don't have the contact list. The login consists in sending your contact to the server, so that it can have the public key to communicate in encrypted form.
+            if (@params.ToContact?.IsServer == true && @params.Encrypted && !AntiRecursive) // The servers don't have the client's public key because they don't have the contact list. The login consists in sending your contact to the server, so that it can have the public key to communicate in encrypted form.
             {
                 AntiRecursive = true;
-                LoginToServer(directlyWithoutSpooler, toContact);
+                LoginToServer(@params.DirectlyWithoutSpooler, @params.ToContact);
                 AntiRecursive = false;
             }
 
@@ -240,26 +285,27 @@ namespace EncryptedMessaging
             else
                 AlreadyTrySwitchOnConnectivity = false;
 
-            if (type != MessageType.ContactStatus && toContact?.IsBlocked == true) return;
-            toContact?.ExtendSessionTimeout();
+            if (@params.Type != MessageType.ContactStatus && @params.ToContact?.IsBlocked == true) return;
+            @params.ToContact?.ExtendSessionTimeout();
             byte[] dataPost; DateTime creationDate;
-            dataPost = toIdUsers != null ? Context.MessageFormat.CreateDataPostUnencrypted(type, data, toIdUsers, out creationDate, replyToPostId) : Context.MessageFormat.CreateDataPost(type, data, toContact.Participants, out creationDate, replyToPostId, encrypted);
-            if (MessageDescription.ContainsKey(type) && toContact?.IsVisible == true)
+            dataPost = @params.ToIdUsers != null ? Context.MessageFormat.CreateDataPostUnencrypted(@params.Type, @params.Data, @params.ToIdUsers, out creationDate, @params.ReplyToPostId) : Context.MessageFormat.CreateDataPost(@params.Type, @params.Data, @params.ToContact.Participants, out creationDate, @params.ReplyToPostId, @params.Encrypted);
+            if (MessageDescription.ContainsKey(@params.Type) && @params.ToContact?.IsVisible == true)
             {
                 var localStorageTime = DateTime.UtcNow;
                 //Prepare the plain-text message to view
-                var message = new Message(Context, toContact, type, Context.My.Csp.ExportCspBlob(false), creationDate, data, localStorageTime, Repository.PostId(dataPost), encrypted, toContact.ChatId, Context.My.GetId())
+                var message = new Message(Context, @params.ToContact, @params.Type, Context.My.Csp.ExportCspBlob(false), creationDate, @params.Data, localStorageTime, Repository.PostId(dataPost), @params.Encrypted, @params.ToContact.ChatId, Context.My.GetId())
                 {
-                    ReplyToPostId = replyToPostId
+                    ReplyToPostId = @params.ReplyToPostId
                 };
-                Context.Repository.AddPost(dataPost, toContact.ChatId, ref localStorageTime); // Add the encrypted message to the local storage and also forward it to the server
-                toContact.SetLastMessagePreview(message);
-                toContact.SetLastMessageSent(creationDate, Utility.DataId(dataPost));
-                toContact.Save();
+                Context.Repository.AddPost(dataPost, @params.ToContact.ChatId, ref localStorageTime); // Add the encrypted message to the local storage and also forward it to the server
+                @params.ToContact.SetLastMessagePreview(message);
+                @params.ToContact.SetLastMessageSent(creationDate, Utility.DataId(dataPost));
+                @params.ToContact.Save();
                 ShowMessage(message, true);
             }
-            Context.Channell.CommandsForServer.SendPostToServer(toContact != null ? toContact.ChatId : (ulong)chatId, dataPost, directlyWithoutSpooler);
+            Context.Channell.CommandsForServer.SendPostToServer(@params.ToContact != null ? @params.ToContact.ChatId : (ulong)@params.ChatId, dataPost, @params.DirectlyWithoutSpooler);
         }
+
         private bool AlreadyTrySwitchOnConnectivity;
         private bool AntiRecursive; // Avoid the recursive loop
 

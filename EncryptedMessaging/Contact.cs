@@ -208,7 +208,7 @@ namespace EncryptedMessaging
         public DateTime GetPosts(Action<byte[], DateTime> action, List<DateTime> exclude = null, DateTime antecedent = default, int? take = null)
         {
             if (take == null) // If null then get all messages
-                take = Context.Setting.KeepPost; 
+                take = Context.Setting.KeepPost;
             return Context.Repository.ReadPosts(ChatId, action, antecedent, take, exclude);
         }
 
@@ -351,10 +351,7 @@ namespace EncryptedMessaging
             var lastMessageSent = LastMessageSent;
             if (lastMessageSent != null && lastMessageSent.DataId == dataId)
             {
-                new System.Threading.Tasks.Task(() =>
-                {
-                    Context.OnMessageDeliveredInvoke(this, new DateTime(lastMessageSent.Creation), false);
-                }).Start();
+                Context.OnMessageDeliveredInvoke(this, new DateTime(lastMessageSent.Creation), false);
                 LastMessageDelivered = lastMessageSent;
                 LastMessageSent = null;
                 Save();
