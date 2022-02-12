@@ -21,7 +21,7 @@ namespace EncryptedMessaging
         public Repository(Context context) => _context = context;
         private readonly Context _context;
         public const int MaxPostLength = 20971520; //20 MegaByte
-        private string _path(ulong chatId) => MapPath(Path.Combine(_context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), _context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
+        private string ChatPath(ulong chatId) => MapPath(Path.Combine(_context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), _context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
 
         /// <summary>
         /// Add the encrypted post to local storage and return the reception date
@@ -34,7 +34,7 @@ namespace EncryptedMessaging
         {
             if (receptionDate == default)
                 receptionDate = DateTime.UtcNow;
-            var path = _path(chatId);
+            var path = ChatPath(chatId);
             Directory.CreateDirectory(path);
             if (dataByteArray != null)
             {
@@ -48,7 +48,7 @@ namespace EncryptedMessaging
             }
         }
 
-        private string GetFileName(DateTime dateTime, ulong chatId) => Path.Combine(_path(chatId), dateTime.Ticks.ToString("X", System.Globalization.CultureInfo.InvariantCulture) + ".post");
+        private string GetFileName(DateTime dateTime, ulong chatId) => Path.Combine(ChatPath(chatId), dateTime.Ticks.ToString("X", System.Globalization.CultureInfo.InvariantCulture) + ".post");
 
         private static DateTime GetFileDate(string fileName) => new DateTime(Convert.ToInt64(Path.GetFileName(fileName).Split('.')[0], 16));
 
@@ -64,13 +64,13 @@ namespace EncryptedMessaging
         public DateTime ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, DateTime antecedent = default, int? take = null, List<DateTime> exclude = null)
         {
             DateTime olderPost = DateTime.MaxValue;
-            var path = _path(chatId);
+            var path = ChatPath(chatId);
             if (Directory.Exists(path))
             {
                 var files = Directory.GetFiles(path, "*.post");
-                var filesList = new List<postFile>();
+                var filesList = new List<PostFile>();
                 foreach (var file in files)
-                    filesList.Add(new postFile { FileName = file, ReceptionDate = GetFileDate(file) });
+                    filesList.Add(new PostFile { FileName = file, ReceptionDate = GetFileDate(file) });
 
                 //remove old file
                 var n = 0;
@@ -130,34 +130,44 @@ namespace EncryptedMessaging
             return olderPost;
         }
 
-        private struct postFile
+        private struct PostFile
         {
             public string FileName;
             public DateTime ReceptionDate;
         }
-
-        public byte[] ReadLastPost(ulong chatId, out DateTime receptionTime)
+        /// <summary>
+        /// Get the last post written in a given chat
+        /// </summary>
+        /// <param name="chatId">The ID of the chat for which you want to get the last post</param>
+        /// <param name="receptionDateTime">It also returns the date and time when the post was received</param>
+        /// <returns></returns>
+        public byte[] ReadLastPost(ulong chatId, out DateTime receptionDateTime)
         {
-            receptionTime = DateTime.MinValue;
-            if (!Directory.Exists(_path(chatId)))
+            receptionDateTime = DateTime.MinValue;
+            if (!Directory.Exists(ChatPath(chatId)))
                 return null;
-            var files = Directory.GetFiles(_path(chatId), "*.post");
+            var files = Directory.GetFiles(ChatPath(chatId), "*.post");
             Array.Sort(files, StringComparer.InvariantCulture);
             if (files.Length == 0)
                 return null;
             else
             {
-                receptionTime = GetFileDate(files[files.Length - 1]);
+                receptionDateTime = GetFileDate(files[files.Length - 1]);
                 return File.ReadAllBytes(files[files.Length - 1]);
             }
         }
-
-        public Message GetLastMessageViewable(ulong chatId, out DateTime receptionTime)
+        /// <summary>
+        /// Gets the last visible post (which can be viewed in the chat, therefore system messages that do not produce anything visible are excluded)
+        /// </summary>
+        /// <param name="chatId">The ID of the chat for which you want to get the last message</param>
+        /// <param name="receptionDateTime">It also returns the date and time when the message was received</param>
+        /// <returns></returns>
+        public Message GetLastMessageViewable(ulong chatId, out DateTime receptionDateTime)
         {
-            receptionTime = DateTime.MinValue;
-            if (!Directory.Exists(_path(chatId)))
+            receptionDateTime = DateTime.MinValue;
+            if (!Directory.Exists(ChatPath(chatId)))
                 return null;
-            var files = Directory.GetFiles(_path(chatId), "*.post");
+            var files = Directory.GetFiles(ChatPath(chatId), "*.post");
             Array.Sort(files, StringComparer.InvariantCulture);
             if (files.Length == 0)
                 return null;
@@ -167,9 +177,9 @@ namespace EncryptedMessaging
                 {
                     try
                     {
-                        receptionTime = GetFileDate(file);
+                        receptionDateTime = GetFileDate(file);
                         var data = File.ReadAllBytes(file);
-                        if (_context.MessageFormat.ReadDataPost(data, chatId, receptionTime, out var message))
+                        if (_context.MessageFormat.ReadDataPost(data, chatId, receptionDateTime, out var message))
                         {
                             if (MessageFormat.MessageDescription.ContainsKey(message.Type))
                                 return message;
@@ -182,12 +192,24 @@ namespace EncryptedMessaging
             }
             return null;
         }
-
+        /// <summary>
+        /// Read a post in the chat having the time to receive
+        /// </summary>
+        /// <param name="receptionDateTime">The reception time is used as the identifier of the message to formulate the request</param>
+        /// <param name="chatId">The chat in which you want to search</param>
+        /// <returns></returns>
         public byte[] ReadPost(DateTime receptionDateTime, ulong chatId)
         {
             var fileName = GetFileName(receptionDateTime, chatId);
             return File.Exists(fileName) ? File.ReadAllBytes(fileName) : null;
         }
+
+        /// <summary>
+        /// Read a post given its ID
+        /// </summary>
+        /// <param name="postId">The identifier of the post you want to read</param>
+        /// <param name="chatId">The chat in which to search for the post, identified by the chat ID</param>
+        /// <returns>If the post you are looking for is not found, null is returned</returns>
         public byte[] ReadPostByPostId(ulong postId, ulong chatId)
         {
             var receptionDateTime = DateTime.MinValue;
@@ -203,13 +225,18 @@ namespace EncryptedMessaging
             }
             return receptionDateTime != DateTime.MinValue ? ReadPost(receptionDateTime, chatId) : null;
         }
-
+        /// <summary>
+        /// Permanently delete a post saved in storage
+        /// </summary>
+        /// <param name="receptionDateTime">The date of receipt of the post you want to delete</param>
+        /// <param name="contact">The conversation group (contact) in which the post was written</param>
         public void DeletePost(DateTime receptionDateTime, Contact contact)
         {
             var fileName = GetFileName(receptionDateTime, contact.ChatId);
             if (File.Exists(fileName))
             {
                 File.Delete(fileName);
+                System.Threading.SpinWait.SpinUntil(() => !File.Exists(fileName)); // The debug mode on the mobile platform we have seen that the cancellation of the end takes place asynchronously, we therefore wait for the file to be effectively deleted, in order not to have problems with UpdateLastMessagePreview()
                 lock (ReceptionToPostId)
                 {
                     if (ReceptionToPostId.ContainsKey(receptionDateTime))
@@ -218,14 +245,22 @@ namespace EncryptedMessaging
             }
             contact.UpdateLastMessagePreview();
         }
-
+        /// <summary>
+        /// Delete a post given its identifier
+        /// </summary>
+        /// <param name="postId"></param>
+        /// <param name="chatId">The chat in which to search for the post, identified by the chat ID</param>
         public void DeletePostByPostId(ulong postId, ulong chatId)
         {
             var contact = _context.Contacts.GetContact(chatId);
             if (contact != null)
                 DeletePostByPostId(postId, contact);
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="postId">Delete a post given its identifier</param>
+        /// <param name="contact">The chat in which to search for the post, identified by the contact</param>
         public void DeletePostByPostId(ulong postId, Contact contact)
         {
             lock (ReceptionToPostId)
@@ -241,17 +276,20 @@ namespace EncryptedMessaging
                 });
             }
         }
-
+        /// <summary>
+        /// Erase all content in a chat
+        /// </summary>
+        /// <param name="contact">The contact representing the chat you want to reset</param>
         public void ClearPosts(Contact contact)
         {
             try
             {
-                var directoryInfo = new DirectoryInfo(_path(contact.ChatId));
+                var directoryInfo = new DirectoryInfo(ChatPath(contact.ChatId));
                 if (directoryInfo != null)
                     foreach (var file in directoryInfo.GetFiles())
                     {
                         file.Delete();
-                        var post = new postFile { FileName = file.Name, ReceptionDate = GetFileDate(file.Name) };
+                        var post = new PostFile { FileName = file.Name, ReceptionDate = GetFileDate(file.Name) };
                         lock (ReceptionToPostId)
                         {
                             if (ReceptionToPostId.ContainsKey(post.ReceptionDate))

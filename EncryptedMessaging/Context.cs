@@ -36,7 +36,6 @@ namespace EncryptedMessaging
         /// <param name="cloudPath">Specify the location of the cloud directory (where it saves and reads files), if you don't want to use the system one. The cloud is used only in server mode</param>
         public Context(string entryPoint, string networkName = "testnet", bool multipleChatModes = false, string privateKeyOrPassphrase = null, bool isServer = false, bool? internetAccess = null, Action<Action> invokeOnMainThread = null, Func<string, string> getSecureKeyValue = null, SecureStorage.Initializer.SetKeyKalueSecure setSecureKeyValue = null, Func<string> getFirebaseToken = null, Func<string> getAppleDeviceToken = null, string cloudPath = null)
         {
-            Contexts.Add(this);
             _internetAccess = internetAccess ?? NetworkInterface.GetIsNetworkAvailable();
 #if DEBUG
             if (cloudPath != null && !isServer)
