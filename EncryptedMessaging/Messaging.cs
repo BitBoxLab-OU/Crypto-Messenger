@@ -62,8 +62,8 @@ namespace EncryptedMessaging
             if (Context.MessageFormat.ReadDataPost(data, chatId, receptionTime, out var message, true))
             {
                 var isViewable = MessageDescription.ContainsKey(message.Type);
-                //if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
-                //    action.Invoke(message); // Raise an event for plugins listening for binary data
+                if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
+                action.Invoke(message); // Raise an event for plugins listening for binary data
 
                 if (!message.Encrypted) // Incoming messages without encryption are ignored
                 {

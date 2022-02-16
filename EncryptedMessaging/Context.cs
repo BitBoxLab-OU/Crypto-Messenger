@@ -197,10 +197,10 @@ namespace EncryptedMessaging
         {
             Thread.CurrentThread.Priority = ThreadPriority.Highest;
             Contacts.LoadContacts(IsRestored);
+            IsReady = true;
             if (IsRestored && !IsServer)
                 Contacts.RestoreContactFromCloud();
             OnConnectivityChange(_internetAccess);
-            IsReady = true;
             OnContextIsInitialized?.Invoke(this);
         }
 
@@ -251,6 +251,8 @@ namespace EncryptedMessaging
         public delegate bool ShareTextMessage(string text);
         // Through this we can program an action that is triggered when a message arrives from a certain chat id
 
+        public Dictionary<ulong, Action<Message>> OnMessageBinaryCome = new Dictionary<ulong, Action<Message>>();
+        
         internal int Domain;
         public Channell Channell;
         public static void ReEstablishConnection(bool iMSureThereIsConnection = false)
