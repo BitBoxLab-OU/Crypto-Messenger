@@ -610,7 +610,7 @@ namespace EncryptedMessaging
         /// <param name="privateKey">The private key to decrypt the content</param>
         /// <param name="description">Literal description of content</param>
         /// <param name="serverUrl">The URL (max 256 char) of the server where the shared content resides. The name of the file is not necessary because it is obtained from the private key. If this value is allowed, then the server will be the default one</param>
-        public void ShareEncryptedContent(Contact toContact, string contentType, byte[] privateKey, string description, string serverUrl = null)
+        public void ShareEncryptedContent(Contact toContact, string contentType, byte[] privateKey, string description, string serverUrl = null, ulong? replyToPostId=null)
         {
             serverUrl = serverUrl ?? "";
             description = description ?? "";
@@ -621,7 +621,7 @@ namespace EncryptedMessaging
                 throw new ArgumentException("This value must not exceed 256 characters");
 #endif
             var data = Functions.JoinData(true, Encoding.ASCII.GetBytes(contentType), privateKey, Encoding.Unicode.GetBytes(description), Encoding.ASCII.GetBytes(serverUrl));
-            SendMessage(MessageType.ShareEncryptedContent, data, toContact);
+            SendMessage(MessageType.ShareEncryptedContent, data, toContact, replyToPostId);
         }
 
 #if DEBUG_A

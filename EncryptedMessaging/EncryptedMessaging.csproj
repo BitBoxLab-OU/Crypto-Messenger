@@ -64,7 +64,7 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SecureStorageGit\SecureStorage\SecureStorage.csproj" />
+    <ProjectReference Include="..\..\Secure-Storage\SecureStorage\SecureStorage.csproj" />
     <ProjectReference Include="..\CommunicationChannel\CommunicationChannel.csproj" />
   </ItemGroup>
   <ItemGroup>
