@@ -261,7 +261,6 @@ namespace EncryptedMessaging
             });
         }
 
-
         internal const int AntispamCloud = 3;
         /// <summary>
         /// Backup my name

@@ -4,17 +4,33 @@ using System.Net.Sockets;
 
 namespace CommunicationChannel
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public static class Utility
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
 		public static uint DataId(byte[] data) => BitConverter.ToUInt32(DataIdBinary(data), 0);
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
 		public static byte[] DataIdBinary(byte[] data)
 		{
 			return data?.Length < 4
 				? data.Combine(new byte[4]).Take(4)
 				: data.Skip(data.Length - 4);
 		}
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
 		public static byte[] FastHash(byte[] data)
 		{
 			void xor(byte[] a, byte[] b)
@@ -32,7 +48,10 @@ namespace CommunicationChannel
 			xor(result, end);
 			return result;
 		}
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
 		public static string GetLocalIPAddress()
 		{
 			var host = Dns.GetHostEntry(Dns.GetHostName());

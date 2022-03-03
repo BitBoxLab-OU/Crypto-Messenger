@@ -1,0 +1,442 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CommunicationChannel</name>
+    </assembly>
+    <members>
+        <member name="T:CommunicationChannel.AntiDuplicate">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.AntiDuplicate.#ctor">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.AntiDuplicate.AlreadyReceived(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="T:CommunicationChannel.Channell">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Channell.#ctor(System.String,System.Int32,System.Func{System.Boolean},System.Action{System.UInt64,System.Byte[]},System.Action{System.UInt32},System.UInt64,System.Int32)">
+            <summary>
+            Initialize the library
+            </summary>
+            <param name="serverAddress">Server Address</param>
+            <param name="domain">A domain corresponds to a membership group. Using the domain it is possible to divide the traffic on a server into TestNet, MainNet group (in order to isolate the message circuit within a given domain).</param>
+            <param name="contextIsReady">function that checks if the client is ready</param> 
+            <param name="onMessageArrives">Event that is raised when a message arrives.</param>
+            <param name="onDataDeliveryConfirm">Event that is generated when the router (server) has received the outgoing message, This element returns the message in raw format</param>
+            <param name="myId">The identifier of the current user. Since the server system is focused on anonymity and security, there is no user list, it is a cryptographic id generated with a hashing algorithm</param>
+            <param name="connectionTimeout">Used to remove the connection when not in use. However, mobile systems remove the connection when the application is in the background so it makes no sense to try to keep the connection always open. This also lightens the number of simultaneous server-side connections.</param>
+        </member>
+        <member name="F:CommunicationChannel.Channell.CommandsForServer">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Channell.ReEstablishConnection">
+            <summary>
+            Use this command to re-establish the connection if it is disabled by the timer set with the initialization
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Channell.IsConnected">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:CommunicationChannel.Channell.ServerUri">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Channell.Domain">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channell.KeepAliveFailures">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channell.InternetAccess">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:CommunicationChannel.CommandsForServer">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.CommandsForServer.DataReceivedConfirmation(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="dataReceived"></param>
+        </member>
+        <member name="T:CommunicationChannel.Converter">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Converter.ToUnixTimestamp(System.DateTime)">
+            <summary>
+            
+            </summary>
+            <param name="dateTime"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.FromUnixTimestamp(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="timesatamp"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.FromUnixTimestamp(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="timesatamp4Bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.Base36Encode(System.UInt64)">
+            <summary>
+            Encode the given number into a Base36 string
+            </summary>
+            <param name="input"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.Base36Decode(System.String)">
+            <summary>
+            Decode the Base36 Encoded string into a number
+            </summary>
+            <param name="input"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt32)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.Int16)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt16)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.Int64)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt64)">
+            <summary>
+            
+            </summary>
+            <param name="n"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToUint(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToInt(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToUshort(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToShort(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToUlong(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.BytesToLong(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="T:CommunicationChannel.Protocol">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:CommunicationChannel.Protocol.Command">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Protocol.Command.ConnectionEstablished">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Protocol.Command.DataReceivedConfirmation">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Protocol.Command.Ping">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Protocol.Command.SetNewpost">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Protocol.Command.Messages">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="T:CommunicationChannel.Spooler">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Spooler.AddToQuee(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="M:CommunicationChannel.Spooler.OnSendCompleted(System.Byte[],System.Exception,System.Boolean)">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <param name="ex"></param>
+            <param name="connectionIsLost"></param>
+        </member>
+        <member name="M:CommunicationChannel.Spooler.OnConfirmReceipt(System.UInt32)">
+            <summary>
+            
+            </summary>
+            <param name="dataId"></param>
+        </member>
+        <member name="T:CommunicationChannel.Tcp">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Tcp.SendData(System.Byte[])">
+            <summary>
+            Send the data, which will be parked in the spooler, cannot be forwarded immediately: If there is a queue or if there is no internet line the data will be parked.
+            </summary>
+            <param name="data">Data to be sent</param>
+        </member>
+        <member name="M:CommunicationChannel.Tcp.ExecuteSendData(System.Byte[],System.Action,System.Boolean)">
+            <summary>
+            Send data to server (router) without going through the spooler
+            </summary>
+            <param name="data">Data to be sent</param>
+            <param name="executeOnConfirmReceipt">Action to be taken when the router has successfully received the data sent</param>
+            <param name="directlyWithoutSpooler">If true, it indicates to the router (server) that it should not park the data if the receiver is not connected</param>
+        </member>
+        <member name="M:CommunicationChannel.Tcp.Connect">
+            <summary>
+            Establish the connection and start the spooler
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Tcp.Disconnect(System.Boolean)">
+            <summary>
+            
+            </summary>
+            <param name="tryConnectAgain"></param>
+        </member>
+        <member name="M:CommunicationChannel.Tcp.IsConnected">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:CommunicationChannel.Utility">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:CommunicationChannel.Utility.DataId(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Utility.DataIdBinary(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Utility.FastHash(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:CommunicationChannel.Utility.GetLocalIPAddress">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Bytes">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:Bytes.Reverse(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.Combine(System.Byte[],System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <param name="byteArray"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.Split(System.Byte[])">
+            <summary>
+            Divide merged data packets with join function
+            </summary>
+            <param name="data">Combined packages</param>
+            <returns>Split data List</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:Bytes.Join(System.Byte[],System.Byte[][])" -->
+        <member name="M:Bytes.Join(System.Byte[][])">
+            <summary>
+            Join data packets
+            </summary>
+            <param name="values">packages to join</param>
+            <returns>Byte array splittable</returns>
+        </member>
+        <member name="M:Bytes.GetBytes(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.GetBytesFromASCII(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.ToUnicode(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.ToASCII(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="me"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.Take(System.Byte[],System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="source"></param>
+            <param name="length"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.Skip(System.Byte[],System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="source"></param>
+            <param name="offset"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.SequenceEqual(System.Byte[],System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="source"></param>
+            <param name="compareTo"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.GetBytes(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Bytes.GetBytes(System.UInt32)">
+            <summary>
+            
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

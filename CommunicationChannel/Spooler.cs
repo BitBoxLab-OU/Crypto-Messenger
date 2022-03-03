@@ -6,16 +6,19 @@ using System.Threading;
 
 namespace CommunicationChannel
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	internal class Spooler
 	{
-		internal Spooler(Channell channell)
+		internal Spooler(Channel channell)
 		{
 			_channell = channell;
 			_queueListName = "ql" + _channell.MyId.ToString();
 			_queueName = "q" + _channell.MyId.ToString() + "-";
 			LoadUnsendedData();
 		}
-		private readonly Channell _channell;
+		private readonly Channel _channell;
 		private string _queueListName;
 		private string _queueName;
 		private const bool _persistentQuee = true;
@@ -26,28 +29,28 @@ namespace CommunicationChannel
 			var datas = new List<byte[]>();
 			lock (_inQuee)
 			{
-				if (_persistentQuee && Channell.IsoStoreage.FileExists(_queueListName))
+				if (_persistentQuee && Channel.IsoStoreage.FileExists(_queueListName))
 				{
-					using (var stream = new IsolatedStorageFileStream(_queueListName, FileMode.Open, FileAccess.Read, Channell.IsoStoreage))
+					using (var stream = new IsolatedStorageFileStream(_queueListName, FileMode.Open, FileAccess.Read, Channel.IsoStoreage))
 					{
 						while (stream.Position < stream.Length)
 						{
 							var dataInt = new byte[4];
 							stream.Read(dataInt, 0, 4);
 							var progressive = BitConverter.ToInt32(dataInt, 0);
-							if (Channell.IsoStoreage.FileExists(_queueName + progressive))
+							if (Channel.IsoStoreage.FileExists(_queueName + progressive))
 							{
-								using (var stream2 = new IsolatedStorageFileStream(_queueName + progressive, FileMode.Open, FileAccess.Read, Channell.IsoStoreage))
+								using (var stream2 = new IsolatedStorageFileStream(_queueName + progressive, FileMode.Open, FileAccess.Read, Channel.IsoStoreage))
 								{
 									var data = new byte[stream2.Length];
 									stream2.Read(data, 0, (int)stream2.Length);
 									datas.Add(data);
 								}
-								Channell.IsoStoreage.DeleteFile(_queueName + progressive);
+								Channel.IsoStoreage.DeleteFile(_queueName + progressive);
 							}
 						}
 					}
-					Channell.IsoStoreage.DeleteFile(_queueListName);
+					Channel.IsoStoreage.DeleteFile(_queueListName);
 				}
 			}
 			foreach (var data in datas)
@@ -56,6 +59,10 @@ namespace CommunicationChannel
 
 		private int _progressive;
 		private readonly List<Tuple<uint, int>> _inQuee = new List<Tuple<uint, int>>();  // Tuple<int, int> = Tuple<idData, progressive>
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
 		public void AddToQuee(byte[] data)
 		{
 			//_channell.Tcp.Connect();
@@ -65,7 +72,7 @@ namespace CommunicationChannel
 				lock (_inQuee)
 				{
 					_inQuee.Add(Tuple.Create(Utility.DataId(data), _progressive));
-					using (var stream = new IsolatedStorageFileStream(_queueName + _progressive, FileMode.Create, FileAccess.Write, Channell.IsoStoreage))
+					using (var stream = new IsolatedStorageFileStream(_queueName + _progressive, FileMode.Create, FileAccess.Write, Channel.IsoStoreage))
 						stream.Write(data, 0, data.Length);
 					_progressive += 1;
 					SaveQueelist();
@@ -74,7 +81,7 @@ namespace CommunicationChannel
 			if (Queue.Count == 1) //if the Queue is empty, the spooler is stopped, then re-enable the spooler
 				SendNext(false);
 		}
-		public void RemovePersistent(uint dataId)
+		private void RemovePersistent(uint dataId)
 		{
 			if (_persistentQuee)
 			{
@@ -85,8 +92,8 @@ namespace CommunicationChannel
 					{
 						var progressive = toRemove.Item2;
 						_inQuee.Remove(toRemove);
-						if (Channell.IsoStoreage.FileExists(_queueName + progressive))
-							Channell.IsoStoreage.DeleteFile(_queueName + progressive);
+						if (Channel.IsoStoreage.FileExists(_queueName + progressive))
+							Channel.IsoStoreage.DeleteFile(_queueName + progressive);
 						SaveQueelist();
 					}
 				}
@@ -95,11 +102,16 @@ namespace CommunicationChannel
 
 		private void SaveQueelist()
 		{
-			using (var stream = new IsolatedStorageFileStream(_queueListName, FileMode.Create, FileAccess.Write, Channell.IsoStoreage))
+			using (var stream = new IsolatedStorageFileStream(_queueListName, FileMode.Create, FileAccess.Write, Channel.IsoStoreage))
 				foreach (Tuple<uint, int> item in _inQuee)
 					stream.Write(item.Item2.GetBytes(), 0, 4);
 		}
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <param name="ex"></param>
+		/// <param name="connectionIsLost"></param>
 		public void OnSendCompleted(byte[] data, Exception ex, bool connectionIsLost)
 		{
 			if (ex != null)
@@ -114,6 +126,10 @@ namespace CommunicationChannel
 			}
 		}
 		internal List<Tuple<uint, Action>> ExecuteOnConfirmReceipt = new List<Tuple<uint, Action>>();
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dataId"></param>
 		public void OnConfirmReceipt(uint dataId)
 		{
 			lock (_channell.Tcp.DataAwaitingConfirmation)

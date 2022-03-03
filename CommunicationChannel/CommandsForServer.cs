@@ -5,10 +5,13 @@ using System.Threading.Tasks;
 
 namespace CommunicationChannel
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public class CommandsForServer
 	{
-		internal CommandsForServer(Channell channell) => _channell = channell;
-		private readonly Channell _channell;
+		internal CommandsForServer(Channel channell) => _channell = channell;
+		private readonly Channel _channell;
 		internal void SendCommandToServer(Protocol.Command command, byte[] dataToSend = null, ulong? chatId = null, ulong? myId = null, bool directlyWithoutSpooler = false)
 		{
 			if (!_channell.Tcp.IsConnected())
@@ -44,6 +47,10 @@ namespace CommunicationChannel
 		//	Tcp.Connect(myId, ServerAddress);
 		//}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dataReceived"></param>
 		public void DataReceivedConfirmation(byte[] dataReceived) => SendCommandToServer(Protocol.Command.DataReceivedConfirmation, Utility.DataIdBinary(dataReceived), directlyWithoutSpooler: true);
 
 	}

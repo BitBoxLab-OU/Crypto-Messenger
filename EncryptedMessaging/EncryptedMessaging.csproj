@@ -22,6 +22,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;NETSTANDARD;NETSTANDARD2_0</DefineConstants>
     <Optimize>false</Optimize>
+    <WarningLevel>0</WarningLevel>
+    <DocumentationFile>C:\Data\AntiGitCode\CryptoMessenger\Crypto-Messenger\EncryptedMessaging\EncryptedMessaging.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_ALI|AnyCPU'">
     <DefineConstants>DEBUG;NETSTANDARD;NETSTANDARD2_0</DefineConstants>

@@ -3,9 +3,17 @@ using CommunicationChannel;
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public static class Bytes
 	{
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="me"></param>
+		/// <param name="element"></param>
+		/// <returns></returns>
 		public static byte[] Combine(this byte[] me, params byte[][] element)
 		{
 			var first = (byte[])me.Clone();

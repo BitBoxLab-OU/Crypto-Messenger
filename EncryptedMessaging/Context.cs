@@ -42,7 +42,7 @@ namespace EncryptedMessaging
                 System.Diagnostics.Debugger.Break(); // Set up cloud path functions for server applications only
 #endif
             Cloud.ReceiveCloudCommands.SetCustomPath(cloudPath, isServer);
-            PingAddress = new UriBuilder(entryPoint).Uri;
+            EntryPoint = new UriBuilder(entryPoint).Uri;
             Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined;
 
             var platform = Environment.OSVersion.Platform;
@@ -88,7 +88,7 @@ namespace EncryptedMessaging
             Messaging = new Messaging(this, multipleChatModes);
             Contacts = new Contacts(this);
             var keepConnected = runtimePlatform != Contact.RuntimePlatform.Android && runtimePlatform != Contact.RuntimePlatform.iOS;
-            Channell = new Channell(entryPoint, Domain, () => IsReady, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
+            Channel = new Channel(entryPoint, Domain, () => IsReady, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
             if (Instances == 0)
                 new Task(() => _ = Time.CurrentTimeGMT).Start();
             IsRestored = !string.IsNullOrEmpty(privateKeyOrPassphrase);
@@ -227,7 +227,7 @@ namespace EncryptedMessaging
         /// Function that is called when the context has been fully initialized.
         /// If you want to automate something after context initialization, you can do so by assigning an action to this value!
         /// </summary>
-        public static Action<Context> OnContextIsInitialized;
+        public static event Action<Context> OnContextIsInitialized;
 
         internal bool IsReady
         {
@@ -243,7 +243,10 @@ namespace EncryptedMessaging
         {
             get { return _internetAccess; }
         }
-        internal static Uri PingAddress;
+        /// <summary>
+        /// The entry point server, to access the network
+        /// </summary>
+        public static Uri EntryPoint;
         /// <summary>
         /// Function that must be called whenever the host system has a change of state on the connection. This parameter must be set when starting the application.
         /// If it is not set, the libraries do not know if there are changes in the state of the internet connection, and the messages could remain in the queue without being sent.
@@ -252,7 +255,7 @@ namespace EncryptedMessaging
         public static void OnConnectivityChange(bool Connectivity)
         {
             _internetAccess = Connectivity;
-            Channell.InternetAccess = _internetAccess;
+            Channel.InternetAccess = _internetAccess;
         }
 
         internal Contact.RuntimePlatform RuntimePlatform;
@@ -274,16 +277,21 @@ namespace EncryptedMessaging
         // Through this we can program an action that is triggered when a message arrives from a certain chat id
 
         internal int Domain;
-        internal Channell Channell;
+        internal Channel Channel;
         /// <summary>
         /// Returns the current status of the connection with the router/server
         /// </summary>
-        public bool IsConnected => Channell != null && Channell.IsConnected();
+        public bool IsConnected => Channel != null && Channel.IsConnected();
+        /// <summary>
+        /// Function that reactivates the connection when it is lost. Its use is designed for all those situations in which the connection could be interrupted, for example mobile applications can interrupt the connection when they are placed in the background. When the application returns to the foreground it is advisable to call this comondo to reactivate the connection.      
+        /// If this method is not called, the mobile application returns to the foreground, it could stop working and stop receiving messages, while notifications could arrive anyway if routed with Firebase or other external services.
+        /// </summary>
+        /// <param name="iMSureThereIsConnection"></param>
         public static void ReEstablishConnection(bool iMSureThereIsConnection = false)
         {
             if (iMSureThereIsConnection)
-                Functions.TrySwitchOnConnectivityByPing(PingAddress);
-            Channell.ReEstablishConnection();
+                Functions.TrySwitchOnConnectivityByPing(EntryPoint);
+            Channel.ReEstablishConnection();
         }
 
         /// <summary>

@@ -8,17 +8,20 @@ using System.Threading;
 
 namespace CommunicationChannel
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal class Tcp
     {
-        internal Tcp(Channell channell)
+        internal Tcp(Channel channel)
         {
-            Channell = channell;
+            Channel = channel;
             TimerCheckConnection = new Timer(OnTimerCheckConnection, null, Timeout.Infinite, Timeout.Infinite);
             _timerAutoDisconnect = new Timer(OnTimerAutoDisconnect, null, Timeout.Infinite, Timeout.Infinite);
             TimerKeepAlive = new Timer(OnTimerKeepAlive, null, Timeout.Infinite, Timeout.Infinite);
             SendTimeOut = new Timer(ExecuteOnSendTimeout, null, Timeout.Infinite, Timeout.Infinite);
         }
-        internal readonly Channell Channell;
+        internal readonly Channel Channel;
 
         // =================== This timer checks if the connection has been lost and reestablishes it ====================================
         internal Timer TimerCheckConnection;
@@ -28,7 +31,7 @@ namespace CommunicationChannel
         {
             lock (LockIsConnected)
             {
-                if (Channell.InternetAccess)
+                if (Channel.InternetAccess)
                     if (!Connect())
                         TimerCheckConnection.Change(TimerIntervalCheckConnection, Timeout.Infinite); // restart again
             }
@@ -48,8 +51,8 @@ namespace CommunicationChannel
         {
             if (connectionTimeout == null)
                 _timerStartedTime = DateTime.UtcNow;
-            if (Channell.ConnectionTimeout != Timeout.Infinite)
-                _timerAutoDisconnect.Change(connectionTimeout != null ? (int)connectionTimeout : Channell.ConnectionTimeout, Timeout.Infinite);
+            if (Channel.ConnectionTimeout != Timeout.Infinite)
+                _timerAutoDisconnect.Change(connectionTimeout != null ? (int)connectionTimeout : Channel.ConnectionTimeout, Timeout.Infinite);
         }
         // ===============================================================================================================================
 
@@ -67,7 +70,7 @@ namespace CommunicationChannel
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                Channell.KeepAliveFailures++;
+                Channel.KeepAliveFailures++;
 #if DEBUG
                 if (ex.HResult != -2146233079) // The server is pinging and may have dropped the connection because it is not responding during debugging. If the error is not the same, then it breaks on the next line
                     Debugger.Break();
@@ -80,12 +83,12 @@ namespace CommunicationChannel
         }
         private void KeepAliveStart()
         {
-            if (Channell.ConnectionTimeout == Timeout.Infinite) //I'm a server
+            if (Channel.ConnectionTimeout == Timeout.Infinite) //I'm a server
                 TimerKeepAlive.Change(KeepAliveInterval, Timeout.Infinite);
         }
         private void KeepAliveStop()
         {
-            if (Channell.ConnectionTimeout == Timeout.Infinite) //I'm a server
+            if (Channel.ConnectionTimeout == Timeout.Infinite) //I'm a server
                 TimerKeepAlive.Change(Timeout.Infinite, Timeout.Infinite);
         }
         // ===============================================================================================================================
@@ -99,7 +102,7 @@ namespace CommunicationChannel
         /// <param name="data">Data to be sent</param>
         public void SendData(byte[] data)
         {
-            Channell.Spooler.AddToQuee(data);
+            Channel.Spooler.AddToQuee(data);
         }
 
         internal readonly Timer SendTimeOut; // Timer used to generate a data send timeout. If the server does not respond within a certain period, we can consider the connection broken
@@ -122,14 +125,14 @@ namespace CommunicationChannel
 #if DEBUG
             if (!Logged && dataLength > 0 && data[0] != (byte)Protocol.Command.ConnectionEstablished)
             {
-                Debug.WriteLine(Channell.ServerUri); // Current entry point
+                Debug.WriteLine(Channel.ServerUri); // Current entry point
                 if (directlyWithoutSpooler)
                     Debugger.Break(); // Don't send message directly without spooler before authentication on the server!
                 else
                     Debugger.Break(); // Verify if the server running and if you have internet connection!  (Perhaps there is no server at the current entry point)
             }
 #endif
-            if (dataLength > _maxDataLength) { Channell.Spooler.OnSendCompleted(data, new Exception("excess data length"), false); return; }
+            if (dataLength > _maxDataLength) { Channel.Spooler.OnSendCompleted(data, new Exception("excess data length"), false); return; }
             ToWrite += dataLength;
             SuspendAutoDisconnectTimer();
 
@@ -154,12 +157,12 @@ namespace CommunicationChannel
             if (executeOnConfirmReceipt != null)
             {
                 var dataId = Utility.DataId(data);
-                Channell.Spooler.ExecuteOnConfirmReceipt.Add(Tuple.Create(dataId, executeOnConfirmReceipt));
+                Channel.Spooler.ExecuteOnConfirmReceipt.Add(Tuple.Create(dataId, executeOnConfirmReceipt));
             }
 
             if (Client == null || !Client.Connected)
             {
-                Channell.Spooler.OnSendCompleted(data, new Exception("not connected"), true);
+                Channel.Spooler.OnSendCompleted(data, new Exception("not connected"), true);
             }
             else
             {
@@ -176,13 +179,13 @@ namespace CommunicationChannel
                         KeepAliveStop();
                         stream.Write(data, wrided, dataLength - wrided);
                         stream.Flush();
-                        Channell.Spooler.OnSendCompleted(data, null, false);
+                        Channel.Spooler.OnSendCompleted(data, null, false);
                         KeepAliveStart();
                     }
                 }
                 catch (Exception ex)
                 {
-                    Channell.Spooler.OnSendCompleted(data, ex, true);
+                    Channel.Spooler.OnSendCompleted(data, ex, true);
                 }
             }
             ResumeAutoDisconnectTimer();
@@ -194,17 +197,17 @@ namespace CommunicationChannel
         /// </summary>
         internal bool Connect()
         {
-            if (!Channell.ContextIsReady())
+            if (!Channel.ContextIsReady())
                 return false;
             lock (this)
             {
-                if (!IsConnected() && Channell.InternetAccess)
+                if (!IsConnected() && Channel.InternetAccess)
                 {
                     GetPorts(out List<int> ports);
                     StartLinger(ports, out Exception exception);
                     if (exception != null)
                     {
-                        Channell.OnTcpError(ErrorType.ConnectionFailure, exception.Message);
+                        Channel.OnTcpError(ErrorType.ConnectionFailure, exception.Message);
                         Disconnect();
                     }
                     else
@@ -239,7 +242,7 @@ namespace CommunicationChannel
             exception = null;
             foreach (var port in ports)
             {
-                foreach (IPAddress address in Dns.GetHostAddresses(Channell.ServerUri.Host).Reverse())
+                foreach (IPAddress address in Dns.GetHostAddresses(Channel.ServerUri.Host).Reverse())
                 {
                     try
                     {
@@ -278,14 +281,14 @@ namespace CommunicationChannel
         private void OnCennected()
         {
             ResumeAutoDisconnectTimer();
-            Channell.OnTcpError(ErrorType.Working, "Connection established successfully");
+            Channel.OnTcpError(ErrorType.Working, "Connection established successfully");
             BeginRead(Client);
             void startSpooler()
             {
                 Logged = true;
-                Channell.Spooler.SendNext(); // When the connection is established, it starts the spooler
+                Channel.Spooler.SendNext(); // When the connection is established, it starts the spooler
             };
-            var data = Channell.CommandsForServer.CreateCommand(Protocol.Command.ConnectionEstablished, null, null, Channell.MyId); // log in
+            var data = Channel.CommandsForServer.CreateCommand(Protocol.Command.ConnectionEstablished, null, null, Channel.MyId); // log in
             ExecuteSendData(data, startSpooler);
             TimerCheckConnection.Change(Timeout.Infinite, Timeout.Infinite); // Stop check if connection is lost
         }
@@ -304,7 +307,7 @@ namespace CommunicationChannel
             }
             catch (Exception ex)
             {
-                Channell.OnTcpError(ErrorType.LostConnection, ex.Message);
+                Channel.OnTcpError(ErrorType.LostConnection, ex.Message);
                 Disconnect();
                 return;
             }
@@ -316,15 +319,15 @@ namespace CommunicationChannel
                 catch (Exception ex)
                 {
                     if (ex.Message.StartsWith("Cannot access a disposed object"))
-                        Channell.OnTcpError(ErrorType.ConnectionClosed, "The timer has closed the connection");
+                        Channel.OnTcpError(ErrorType.ConnectionClosed, "The timer has closed the connection");
                     else
-                        Channell.OnTcpError(ErrorType.LostConnection, ex.Message);
+                        Channel.OnTcpError(ErrorType.LostConnection, ex.Message);
                     Debug.WriteLine(client.Connected.ToString());
                     Disconnect();
                     return;
                 }
                 if (bytesRead != 4)
-                    Channell.OnTcpError(ErrorType.WrondDataLength, null);
+                    Channel.OnTcpError(ErrorType.WrondDataLength, null);
                 else
                 {
                     var firstUint = BitConverter.ToUInt32(dataLength, 0);
@@ -339,7 +342,7 @@ namespace CommunicationChannel
             }
             catch (Exception ex)
             {
-                Channell.OnTcpError(ErrorType.LostConnection, ex.Message);
+                Channel.OnTcpError(ErrorType.LostConnection, ex.Message);
                 Disconnect();
             }
         }
@@ -365,7 +368,7 @@ namespace CommunicationChannel
             }
             catch (Exception)
             {
-                Channell.OnTcpError(ErrorType.LostConnection, null);
+                Channel.OnTcpError(ErrorType.LostConnection, null);
                 ToRead = 0;
                 Disconnect();
                 return;
@@ -374,23 +377,23 @@ namespace CommunicationChannel
             if (data.Length == 5 && data[0] == (byte)Protocol.Command.DataReceivedConfirmation)
             {
                 var dataId = BitConverter.ToUInt32(data, 1);
-                Channell.Spooler.OnConfirmReceipt(dataId);
+                Channel.Spooler.OnConfirmReceipt(dataId);
             }
             //count += 1;
-            Channell.OnDataReceives(data, out Tuple<ErrorType, string> error, directlyWithoutSpooler);
+            Channel.OnDataReceives(data, out Tuple<ErrorType, string> error, directlyWithoutSpooler);
             if (error != null)
             {
                 Debugger.Break(); //something went wrong!
                 var textData = System.Text.Encoding.UTF8.GetString(data);
                 Debug.WriteLine(textData); //Let's try to see if the transformation of the received data packet into text gives us some clues to understand what happened!
-                Channell.OnTcpError(error.Item1, error.Item2);
+                Channel.OnTcpError(error.Item1, error.Item2);
             }
-            if (Channell.ConnectionTimeout != Timeout.Infinite)
+            if (Channel.ConnectionTimeout != Timeout.Infinite)
             {
                 if (data.Length >= 1 && data[0] == (byte)Protocol.Command.Ping) // Pinging from the server does not reset the connection timeout, otherwise, if the pings occur frequently, the connection will never be closed
                 {
                     var timePassedMs = (int)(DateTime.UtcNow - timerStarted).TotalMilliseconds;
-                    var remainingTimeMs = Channell.ConnectionTimeout - timePassedMs;
+                    var remainingTimeMs = Channel.ConnectionTimeout - timePassedMs;
                     if (remainingTimeMs < 0)
                         remainingTimeMs = 0; // It will immediately trigger the timer closing the connection
                     ResumeAutoDisconnectTimer(remainingTimeMs);
@@ -404,7 +407,7 @@ namespace CommunicationChannel
         }
 
 
-        internal void InvokeError(ErrorType errorId, string description) => Channell.OnTcpError(errorId, description);
+        internal void InvokeError(ErrorType errorId, string description) => Channel.OnTcpError(errorId, description);
         public enum ErrorType
         {
             Working,
@@ -416,9 +419,13 @@ namespace CommunicationChannel
             ConnectionClosed
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tryConnectAgain"></param>
         public void Disconnect(bool tryConnectAgain = true)
         {
-            if (!Channell.ContextIsReady())
+            if (!Channel.ContextIsReady())
                 return;
             lock (this)
             {
@@ -431,10 +438,10 @@ namespace CommunicationChannel
                     SendTimeOut.Change(Timeout.Infinite, Timeout.Infinite);
                     lock (DataAwaitingConfirmation)
                     {
-                        DataAwaitingConfirmation.ForEach(x => Channell.Spooler.Queue.Add(x));
+                        DataAwaitingConfirmation.ForEach(x => Channel.Spooler.Queue.Add(x));
                         DataAwaitingConfirmation.Clear();
                     }
-                    Channell.Spooler.ExecuteOnConfirmReceipt.Clear();
+                    Channel.Spooler.ExecuteOnConfirmReceipt.Clear();
                     SuspendAutoDisconnectTimer();
                     if (Client != null)
                     {
@@ -445,10 +452,13 @@ namespace CommunicationChannel
                 }
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public bool IsConnected() =>
             //According to the specifications, the property _client.Connected returns the connection status based on the last data transmission. The server may not be connected even if this property returns true
             // https://docs.microsoft.com/it-it/dotnet/api/system.net.sockets.tcpclient.connected?f1url=https%3A%2F%2Fmsdn.microsoft.com%2Fquery%2Fdev16.query%3FappId%3DDev16IDEF1%26l%3DIT-IT%26k%3Dk(System.Net.Sockets.TcpClient.Connected);k(DevLang-csharp)%26rd%3Dtrue&view=netcore-3.1
-            Client != null && Client.Connected && Channell.InternetAccess;
+            Client != null && Client.Connected && Channel.InternetAccess;
     }
 }

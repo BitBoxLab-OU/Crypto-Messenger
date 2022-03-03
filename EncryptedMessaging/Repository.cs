@@ -57,11 +57,11 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="chatId">The id of the chat whose posts you want to read</param>
         /// <param name="action">Action to be performed for each post, the byte[] is binary data of the encrypted post that is read from the repository, DateTime is the time the post was received which you can use as a unique ID (you can use the ticks property of DateTime as a unique id ) </param>
-        /// <param name="antecedent">If set, consider only posts that are dated before the value indicated. It is useful for paginating messages in the chat view, or for telling the loading of messages in blocks. How to use this parameter: You need to store the date of the oldest message that is displayed in the chat, when you want to load a second block of messages you have to pass this date in order to get the next block</param>
+        /// <param name="receprionAntecedent">If set, consider only posts that are dated before the value indicated. It is useful for paginating messages in the chat view, or for telling the loading of messages in blocks. How to use this parameter: You need to store the date of the oldest message that is displayed in the chat, when you want to load a second block of messages you have to pass this date in order to get the next block</param>
         /// <param name="take">Limit the number of messages to take. If not set, the value set in the Context.Setting.MessagePagination settings will be used. Pass the Context.Setting.KeepPost value to process all messages!</param>
         /// <param name="exclude">List of posts to exclude using the received date as a filter</param>
-        /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "antecedent" parameter.</returns>
-        public DateTime ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, DateTime antecedent = default, int? take = null, List<DateTime> exclude = null)
+        /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "receprionAntecedent" parameter.</returns>
+        public DateTime ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, DateTime receprionAntecedent = default, int? take = null, List<DateTime> exclude = null)
         {
             DateTime olderPost = DateTime.MaxValue;
             var path = ChatPath(chatId);
@@ -90,11 +90,11 @@ namespace EncryptedMessaging
                 }
                 filesList = filesList.OrderByDescending(o => o.ReceptionDate).ToList();
                 var skip = 0;
-                if (antecedent != default)
+                if (receprionAntecedent != default)
                 {
                     foreach (var file in filesList)
                     {
-                        if (file.ReceptionDate < antecedent)
+                        if (file.ReceptionDate < receprionAntecedent)
                             break;
                         skip++;
                     }

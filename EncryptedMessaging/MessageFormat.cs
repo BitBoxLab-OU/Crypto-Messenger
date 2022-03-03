@@ -47,6 +47,9 @@ namespace EncryptedMessaging
         /// The author Id NOTE: This value is setting only in not encrypted message!
         /// </summary>
         public readonly ulong AuthorId;
+        /// <summary>
+        /// Unique identification number of the chat
+        /// </summary>
         public readonly ulong ChatId;
         internal byte[] Author;
         /// <summary>
@@ -60,7 +63,13 @@ namespace EncryptedMessaging
         /// </summary>
         /// <returns></returns>
         public string AuthorName() => Context.Contacts.GetParticipantName(Author);
+        /// <summary>
+        /// Creation date and time UTC format
+        /// </summary>
         public DateTime Creation { get; internal set; }
+        /// <summary>
+        /// Reception date and time UTC format
+        /// </summary>
         public DateTime ReceptionTime { get; internal set; }
         internal byte[] Data;
         /// <summary>
@@ -349,6 +358,9 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="dataPost">Post in binary format</param>
         /// <param name="chatId">Chat Id</param>
+        /// <param name="receptionTime">Reception Time UTC format</param>
+        /// <param name="message"></param>
+        /// <param name="isNewPost"></param>
         public bool ReadDataPost(byte[] dataPost, ulong chatId, DateTime receptionTime, out Message message, bool isNewPost = false)
         {
             // [0] version, [1][2][3][4] Unix timestamp, [5] data type, [6] n. participants, [7...] 8 byte for each participants (is the IDs)

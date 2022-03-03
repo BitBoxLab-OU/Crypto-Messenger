@@ -6,7 +6,10 @@ using System.Threading;
 
 namespace CommunicationChannel
 {
-    public class Channell
+    /// <summary>
+    /// 
+    /// </summary>
+    public class Channel
     {
         /// <summary>
         /// Initialize the library
@@ -18,7 +21,7 @@ namespace CommunicationChannel
         /// <param name="onDataDeliveryConfirm">Event that is generated when the router (server) has received the outgoing message, This element returns the message in raw format</param>
         /// <param name="myId">The identifier of the current user. Since the server system is focused on anonymity and security, there is no user list, it is a cryptographic id generated with a hashing algorithm</param>
         /// <param name="connectionTimeout">Used to remove the connection when not in use. However, mobile systems remove the connection when the application is in the background so it makes no sense to try to keep the connection always open. This also lightens the number of simultaneous server-side connections.</param>
-        public Channell(string serverAddress, int domain, Func<bool> contextIsReady, Action<ulong, byte[]> onMessageArrives, Action<uint> onDataDeliveryConfirm, ulong myId, int connectionTimeout = Timeout.Infinite)
+        public Channel(string serverAddress, int domain, Func<bool> contextIsReady, Action<ulong, byte[]> onMessageArrives, Action<uint> onDataDeliveryConfirm, ulong myId, int connectionTimeout = Timeout.Infinite)
         {
             MyId = myId;
             Domain = domain;
@@ -30,9 +33,9 @@ namespace CommunicationChannel
             ServerUri = new UriBuilder(serverAddress).Uri; //new Uri(serverAddress);
             OnMessageArrives = onMessageArrives;
             OnDataDeliveryConfirm = onDataDeliveryConfirm;
-            Channells.Add(this);
+            Channels.Add(this);
         }
-        private static List<Channell> Channells = new List<Channell>();
+        private static List<Channel> Channels = new List<Channel>();
         internal Func<bool> ContextIsReady;
         internal static readonly IsolatedStorageFile IsoStoreage = IsolatedStorageFile.GetStore(IsolatedStorageScope.User | IsolatedStorageScope.Assembly | IsolatedStorageScope.Domain, null, null);
         internal AntiDuplicate AntiDuplicate = new AntiDuplicate();
@@ -40,6 +43,9 @@ namespace CommunicationChannel
         internal ulong MyId;
         internal Spooler Spooler;
         internal Tcp Tcp;
+        /// <summary>
+        /// 
+        /// </summary>
         public CommandsForServer CommandsForServer;
         internal Action<uint> OnDataDeliveryConfirm; // uint parameter is dataId
 
@@ -48,19 +54,29 @@ namespace CommunicationChannel
         /// </summary>
         public static void ReEstablishConnection()
         {
-            foreach (Channell channell in Channells)
+            foreach (Channel channel in Channels)
             {
-                lock (channell.Tcp.LockIsConnected)
+                lock (channel.Tcp.LockIsConnected)
                 {
-                    channell.Tcp.Connect();
+                    channel.Tcp.Connect();
                 }
             }
         }
+       /// <summary>
+       /// 
+       /// </summary>
+       /// <returns></returns>
         public bool IsConnected()
         {
             return Tcp.Client != null && Tcp.Client.Connected;
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public readonly Uri ServerUri;
+        /// <summary>
+        /// 
+        /// </summary>
         public readonly int Domain;
         internal void OnDataReceives(byte[] incomingData, out Tuple<Tcp.ErrorType, string> error, bool directlyWithoutSpooler)
         {
@@ -122,24 +138,30 @@ namespace CommunicationChannel
             }
         }
 
-        public bool LogError = true; // Set this true if you want a ErrorLog
+        private bool LogError = true; // Set this true if you want a ErrorLog
 
         //=========================== Data exposed for diagnostic use =====================================
-        public event Action<string> RefreshLogError;
+        private event Action<string> RefreshLogError;
         internal string StatusDescription; //is multi line text 
-        public bool ClientExists => Tcp.Client != null;
-        public bool ClientConnected => Tcp.Client != null && Tcp.Client.Connected;
-        public bool Logged => Tcp.Logged;
-        public int QueeCount => Spooler.QueeCount;
-        public int LastPostParts;
-        public int PostCounter;
-        public int DuplicatePost;
-        public string ErrorLog;
+        private bool ClientExists => Tcp.Client != null;
+        private bool ClientConnected => Tcp.Client != null && Tcp.Client.Connected;
+        private bool Logged => Tcp.Logged;
+        private int QueeCount => Spooler.QueeCount;
+        private int LastPostParts;
+        private int PostCounter;
+        private int DuplicatePost;
+        private string ErrorLog;
+        /// <summary>
+        /// 
+        /// </summary>
         public ulong KeepAliveFailures { get; internal set; }
         //=================================================================================================
 
 
         private static bool _internetAccess;
+        /// <summary>
+        /// 
+        /// </summary>
         public static bool InternetAccess
         {
             get => _internetAccess;
@@ -149,9 +171,9 @@ namespace CommunicationChannel
                 {
                     _internetAccess = value;
                     if (_internetAccess)
-                        Channells.ForEach(channell => channell.Tcp.Connect());
+                        Channels.ForEach(channel => channel.Tcp.Connect());
                     else
-                        Channells.ForEach(channell => channell.Tcp.Disconnect(false));
+                        Channels.ForEach(channel => channel.Tcp.Disconnect(false));
                 }
             }
         }

@@ -209,6 +209,8 @@ namespace EncryptedMessaging
             public bool DirectlyWithoutSpooler;
             /// <summary>Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</summary>
             public bool Encrypted = true;
+            /// <summary>Avoid a recursive loop for the login message</summary>
+            public bool IsLogin;
         }
 
         /// <summary>
@@ -222,8 +224,13 @@ namespace EncryptedMessaging
         /// <param name="toIdUsers">Id of the members of the group the message is intended for. ToContact and toIdUsers cannot be set simultaneously</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
-        private void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? replyToPostId = null, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true)
+        /// <param name="isLogin">Flad used only for the login command to avoid a recursive loop</param>
+        public void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? replyToPostId = null, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true, bool isLogin = false)
         {
+#if DEBUG
+    if (isLogin== true && type != MessageType.Contact)
+                Debugger.Break(); // The isLogin flag can only be used for the login method
+#endif
             SendMessage(new SendMessageParameters()
             {
                 Type = type,
@@ -234,7 +241,8 @@ namespace EncryptedMessaging
                 ToIdUsers = toIdUsers,
                 DirectlyWithoutSpooler = directlyWithoutSpooler,
                 Encrypted = encrypted,
-            });
+                IsLogin = isLogin
+            }); ;
         }
 
         internal Queue<SendMessageParameters> SendMessageQueue = new Queue<SendMessageParameters>();
@@ -266,11 +274,9 @@ namespace EncryptedMessaging
                 return;
             }
 
-            if (@params.ToContact?.IsServer == true && @params.Encrypted && !AntiRecursive) // The servers don't have the client's public key because they don't have the contact list. The login consists in sending your contact to the server, so that it can have the public key to communicate in encrypted form.
+            if (@params.ToContact?.IsServer == true && @params.Encrypted && !@params.IsLogin) // The servers don't have the client's public key because they don't have the contact list. The login consists in sending your contact to the server, so that it can have the public key to communicate in encrypted form.
             {
-                AntiRecursive = true;
                 LoginToServer(@params.DirectlyWithoutSpooler, @params.ToContact);
-                AntiRecursive = false;
             }
 
             if (!Context.InternetAccess)
@@ -279,7 +285,7 @@ namespace EncryptedMessaging
                 if (!AlreadyTrySwitchOnConnectivity)
                 {
                     AlreadyTrySwitchOnConnectivity = true;
-                    Functions.TrySwitchOnConnectivityByPing(Context.PingAddress);
+                    Functions.TrySwitchOnConnectivityByPing(Context.EntryPoint);
                 }
             }
             else
@@ -303,11 +309,11 @@ namespace EncryptedMessaging
                 @params.ToContact.Save();
                 ShowMessage(message, true);
             }
-            Context.Channell.CommandsForServer.SendPostToServer(@params.ToContact != null ? @params.ToContact.ChatId : (ulong)@params.ChatId, dataPost, @params.DirectlyWithoutSpooler);
+            Context.Channel.CommandsForServer.SendPostToServer(@params.ToContact != null ? @params.ToContact.ChatId : (ulong)@params.ChatId, dataPost, @params.DirectlyWithoutSpooler);
         }
 
         private bool AlreadyTrySwitchOnConnectivity;
-        private bool AntiRecursive; // Avoid the recursive loop
+        //private bool AntiRecursive; // Avoid the recursive loop
 
 
         internal void DeleteMessage(ulong postId, Contact toContact)
@@ -482,10 +488,11 @@ namespace EncryptedMessaging
         /// <param name="onServer">Server to login</param>
         public void LoginToServer(bool directlyWithoutSpooler, Contact onServer)
         {
-            if ((Time.CurrentTimeGMT - onServer.ServerLoggedTime) >= Context.DefaultServerSessionTimeout.Add(-new TimeSpan(0, 1, 0)))
+            var now = DateTime.UtcNow;
+            if ((now - onServer.ServerLoggedTime) >= Context.DefaultServerSessionTimeout.Add(-new TimeSpan(0, 1, 0)))
             {
-                SendContact(Context.My.Contact, onServer, directlyWithoutSpooler);
-                onServer.ServerLoggedTime = Time.CurrentTimeGMT;
+                SendContact(Context.My.Contact, onServer, directlyWithoutSpooler, isLogin: true);
+                onServer.ServerLoggedTime = now;
             }
         }
 
@@ -502,10 +509,13 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="contact">mp3 64 kbps file</param>
         /// <param name="toContact">The recipient</param>
-        public void SendContact(Contact contact, Contact toContact, bool directlyWithoutSpooler = false, bool purposeIsUpdateOnly = false)
+        /// <param name="directlyWithoutSpooler"></param>
+        /// <param name="purposeIsUpdateOnly"></param>
+        /// <param name="isLogin">Flad used only for the login command to avoid a recursive loop</param>
+        public void SendContact(Contact contact, Contact toContact, bool directlyWithoutSpooler = false, bool purposeIsUpdateOnly = false, bool isLogin = false)
         {
             var data = ContactMessage.GetDataMessageContact(contact, Context, purposeIsUpdateOnly: purposeIsUpdateOnly);
-            SendMessage(MessageType.Contact, data, toContact, null, null, null, directlyWithoutSpooler);
+            SendMessage(MessageType.Contact, data, toContact, null, null, null, directlyWithoutSpooler, isLogin: isLogin);
         }
 
         /// <summary>
