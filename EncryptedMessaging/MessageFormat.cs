@@ -8,9 +8,25 @@ namespace EncryptedMessaging
     //========================================================================================================
     //Here are all the functions necessary to process messages in binary format, create messages and read them
     //========================================================================================================
-
+    /// <summary>
+    ///Here are all the functions necessary to process messages in binary format, create messages and read them.
+     /// </summary>
     public class Message
     {
+        /// <summary>
+        /// Message properties.
+        /// </summary>
+        /// <param name="context">Context</param>
+        /// <param name="contact">Recipent</param>
+        /// <param name="type">Type</param>
+        /// <param name="author">Sender</param>
+        /// <param name="creation">Date/time of sending</param>
+        /// <param name="data">Byte array</param>
+        /// <param name="receptionTime">Date/time of delivery</param>
+        /// <param name="postId">Unsigned long integer</param>
+        /// <param name="encrypted">Boolean</param>
+        /// <param name="chatId">Unsigned long integer</param>
+        /// <param name="authorId">Unsigned long integer</param>
         public Message(Context context, Contact contact, MessageFormat.MessageType type, byte[] author, DateTime creation, byte[] data, DateTime receptionTime, ulong postId, bool encrypted, ulong chatId, ulong authorId)
         {
             Context = context;
@@ -226,6 +242,9 @@ namespace EncryptedMessaging
         /// </summary>
         public bool Encrypted;
 
+        /// <summary>
+        /// Translation set for the chat with the recipent.
+        /// </summary>
         public string Translation
         {
             get
@@ -241,8 +260,15 @@ namespace EncryptedMessaging
         }
     }
 
+    /// <summary>
+    /// Message settings set for the recpients.
+    /// </summary>
     public class MessageFormat
     {
+        /// <summary>
+        /// Set context for the message format.
+        /// </summary>
+        /// <param name="context"></param>
         public MessageFormat(Context context)
         {
             _context = context;

@@ -9,8 +9,22 @@ using static EncryptedMessaging.ContactConverter;
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// This class contains all the functionalities related to contact features.
+    /// </summary>
     public class Contact : INotifyPropertyChanged
     {
+        /// <summary>
+        /// Checks if the chat initiated is between a single user or multiple partipants/group. 
+        /// </summary>
+        /// <param name="context">Context</param>
+        /// <param name="participants">Users in the contacts</param>
+        /// <param name="name">Name of the user</param>
+        /// <param name="language">Application language</param>
+        /// <param name="os">Operating system</param>
+        /// <param name="firebaseToken">Token Firebase</param>
+        /// <param name="deviceToken">Device Token of iOS</param>
+        /// <param name="isServer">Is a server</param>
         public Contact(Context context, List<byte[]> participants, string name = null, string language = "en", RuntimePlatform os = RuntimePlatform.Undefined, string firebaseToken = null, string deviceToken = null, bool isServer = false)
         {
             _name = Functions.FirstUpper(name);
@@ -18,6 +32,7 @@ namespace EncryptedMessaging
             Os = os;
             FirebaseToken = firebaseToken;
             DeviceToken = deviceToken;
+            IsServer = isServer;
             IsServer = isServer;
             var participantsClone = participants.ToList(); // We use a clone to prevent errors on other threads interacting with the collection at the same time
             Context = context;
@@ -58,7 +73,7 @@ namespace EncryptedMessaging
             Context.Contacts.Colors(Participants, out LightColor, out DarkColor);
         }
 
-        public Contact()
+        private Contact()
         {
             //Empty constructor for serialization
         }
@@ -74,6 +89,10 @@ namespace EncryptedMessaging
         {
             return string.IsNullOrEmpty(_name) || _name == Pseudonym() ? null : _name;
         }
+
+        /// <summary>
+        /// Get the contact's name (if set), otherwise return null.
+        /// </summary>
         public string Name
         {
             get => string.IsNullOrEmpty(_name) ? Pseudonym() : _name;
@@ -135,8 +154,15 @@ namespace EncryptedMessaging
             Unix,
             Mac
         }
+        /// <summary>
+        /// Set assumed Pseudonyms for the participants in the group.
+        /// </summary>
+        /// <returns></returns>
         public string Pseudonym() => Context.Contacts.Pseudonym(Participants);
         private string _publicKeys;
+       /// <summary>
+       /// Check if public key exists
+       /// </summary>
         public string PublicKeys
         {
             get => _publicKeys;
@@ -339,6 +365,9 @@ namespace EncryptedMessaging
         public MessageInfo LastMessageDelivered;
         public MessageInfo LastMessageSent;
         internal void SetLastMessageSent(DateTime creation, uint dataId) => LastMessageSent = new MessageInfo() { Creation = creation.Ticks, DataId = dataId };
+        /// <summary>
+        /// Set message information on creation and sent.
+        /// </summary>
         public class MessageInfo
         {
             public MessageInfo() { }
@@ -362,8 +391,14 @@ namespace EncryptedMessaging
 
         private List<RemoteReaded> _remoteReadedList = new List<RemoteReaded>();
         public RemoteReaded[] RemoteReadedList { get => _remoteReadedList.ToArray(); set => _remoteReadedList = new List<RemoteReaded>(value); }
+       /// <summary>
+       /// 
+       /// </summary>
         public class RemoteReaded
         {
+            /// <summary>
+            /// Add a timestamp to the message.
+            /// </summary>
             public RemoteReaded()
             {
                 // empty constructor for serialization
@@ -500,7 +535,7 @@ namespace EncryptedMessaging
             var currentAvatar = Avatar;
             var avatarSize = currentAvatar?.Length ?? 0;
             if ((DateTime.UtcNow - LastMessageTime).TotalDays <= 30) // Update the avatars only of those I had a recent conversation, so as not to create traffic on the server
-                Cloud.SendCloudCommands.GetAvatar(Context, (ulong)UserId, avatarSize);
+                Context.CloudManager?.LoadDataFromCloud("Avatar", UserId.ToString(), avatarSize, true); //               Cloud.SendCloudCommands.GetAvatar(Context, (ulong)UserId, avatarSize);
         }
 
         public void Save(bool cloudBackup = false)
@@ -510,7 +545,7 @@ namespace EncryptedMessaging
             if (!cloudBackup) return;
             var data = ContactMessage.GetDataMessageContact(this, Context, !IsGroup, !IsGroup);
             data = SecureStorage.Cryptography.Encrypt(data, Context.My.Csp.ExportCspBlob(true));
-            Cloud.SendCloudCommands.PostObject(Context, "Contact", ChatId.ToString(), data);
+            Context.CloudManager?.SaveDataOnCloud("Contact", ChatId.ToString(), data); // Cloud.SendCloudCommands.PostObject(Context, "Contact", ChatId.ToString(), data);
             RequestAvatarUpdate();
         }
 
@@ -540,7 +575,7 @@ namespace EncryptedMessaging
             if (_sessionTimeout != null)
                 _sessionTimeout.Change(Timeout.Infinite, Timeout.Infinite);
             else
-                Cloud.SendCloudCommands.DeleteObject(Context, "Contact", ChatId.ToString());
+                Context.CloudManager?.DeleteDataOnCloud("Contact", ChatId.ToString()); //   Cloud.SendCloudCommands.DeleteObject(Context, "Contact", ChatId.ToString());
             Context.SecureStorage.ObjectStorage.DeleteObject(typeof(Contact), ChatId.ToString());
             lock (Context.Contacts.ContactsList)
             {
@@ -569,7 +604,7 @@ namespace EncryptedMessaging
         /// </summary>
         [XmlIgnore]
         public object MessageContainerUI { get; set; }
-
+       
         public string GetQrCode() => ContactMessage.GetQrCode(this, Context);
 
         [XmlIgnore]

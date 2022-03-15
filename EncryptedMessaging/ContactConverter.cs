@@ -6,8 +6,15 @@ using CommunicationChannel;
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// This class is used for converting contacts to public keys.
+	/// </summary>
 	public class ContactConverter
 	{
+		/// <summary>
+		/// Set the context to readonly.
+		/// </summary>
+		/// <param name="context">Context</param>
 		public ContactConverter(Context context) => _context = context;
 		private readonly Context _context;
 
@@ -30,7 +37,7 @@ namespace EncryptedMessaging
 		/// This function obtains the list of participants from a string that represents everyone's public key
 		/// </summary>
 		/// <param name="publicKeys">string that represents everyone's public key</param>
-		/// <returns></returns>
+		/// <returns>Boolean</returns>
 		public bool PublicKeysToParticipants(string publicKeys, out List<byte[]> participants)
 		{
 			participants = new List<byte[]>();
@@ -55,7 +62,14 @@ namespace EncryptedMessaging
 			NormalizeParticipants(ref participants);
 			return true;
 		}
-
+		
+		/// <summary>
+		/// Boolean check for validating key.
+		/// </summary>
+		/// <param name="participants">Partipants</param>
+		/// <param name="publicKeys">Public Key</param>
+		/// <param name="removeMyKey">Remove Key</param>
+		/// <returns></returns>
 		public bool ParticipantsToPublicKeys(List<byte[]> participants, out string publicKeys, bool removeMyKey = false)
 		{
 			var participantsClone = participants.ToList(); // We use a clone to prevent errors on other threads interacting with the collection at the same time
@@ -75,9 +89,9 @@ namespace EncryptedMessaging
 		/// <summary>
 		/// Calculate the hash id of the contact. For groups, the name also comes into play in the computation because there can be groups with the same participants but different names
 		/// </summary>
-		/// <param name="participants"></param>
+		/// <param name="participants">Partipants</param>
 		/// <param name="name">The name parameter must only be passed for groups, because there are groups with the same members but different names</param>
-		/// <returns></returns>
+		/// <returns>Unisgned Integer</returns>
 		public static ulong ParticipantsToChatId(List<byte[]> participants, string name)
 		{
 			var participantsClone = participants.ToList(); // So there is no error if the list is changed externally during the sort process
@@ -89,7 +103,12 @@ namespace EncryptedMessaging
 			var hashBytes = CryptoServiceProvider.ComputeHash(pts);
 			return Converter.BytesToUlong(hashBytes.Take(8));
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="participants"></param>
+		/// <returns></returns>
 		public static bool ValidateKeys(List<byte[]> participants)
 		{
 			if (participants == null)
@@ -111,8 +130,18 @@ namespace EncryptedMessaging
 			}
 		}
 
+		/// <summary>
+		/// Boolean check for partipants public keys.
+		/// </summary>
+		/// <param name="keys">Key</param>
+		/// <returns>Boolean</returns>
 		public bool ValidateKeys(string keys) => PublicKeysToParticipants(keys, out var participants) && ValidateKeys(participants);
 
+		/// <summary>
+		/// This will check if the basekey is valid , if not key is converted from base 64 key.
+		/// </summary>
+		/// <param name="base64Key"></param>
+		/// <returns>key</returns>
 		public static bool ValidateKey(string base64Key)
 		{
 			if (base64Key == null)
@@ -131,6 +160,11 @@ namespace EncryptedMessaging
 			}
 		}
 
+		/// <summary>
+		/// Validates the key provided.
+		/// </summary>
+		/// <param name="key"></param>
+		/// <returns></returns>
 		public static bool ValidateKey(byte[] key)
 		{
 			if (key == null)
@@ -149,6 +183,11 @@ namespace EncryptedMessaging
 			}
 		}
 
+		/// <summary>
+		/// Remove they key if it is not null and assign a new Public key Binary for empty values.
+		/// </summary>
+		/// <param name="participants">Participants</param>
+		/// <param name="removeMyKey">Byte array</param>
 		public void NormalizeParticipants(ref List<byte[]> participants, bool removeMyKey = false)
 		{
 			var myKey = _context.My.GetPublicKeyBinary();
@@ -166,6 +205,12 @@ namespace EncryptedMessaging
 			participants.Sort(new Functions.ByteListComparer());
 		}
 
+		/// <summary>
+		/// Change the partipants to their specific User Ids.
+		/// </summary>
+		/// <param name="participants">Partipants</param>
+		/// <param name="context">Context</param>
+		/// <returns>User Id</returns>
 		public static List<ulong> ParticipantsToUserIds(List<byte[]> participants, Context context)
 		{
 			var participantsClone = participants.ToList(); // We use a clone to prevent errors on other threads interacting with the collection at the same time

@@ -7,9 +7,21 @@ using System.Text;
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public class ContactMessage
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="data">Byte array</param>
 		public ContactMessage(byte[] data) => _initialize(data);
+
+		/// <summary>
+		/// Convert  the QR code to base 64 string.
+		/// </summary>
+		/// <param name="qrCode">QR code</param>
 		public ContactMessage(string qrCode) => _initialize(Convert.FromBase64String(qrCode));
 
 		/// <summary>
@@ -105,7 +117,7 @@ namespace EncryptedMessaging
 		/// <summary>
 		/// Return the OS and language for a non-group contact
 		/// </summary>
-		/// <param name="context"></param>
+		/// <param name="context">Context</param>
 		/// <param name="language">Language</param>
 		/// <param name="os">Os</param>
 		public void GetProperties(Context context, out string language, out Contact.RuntimePlatform os, out string firebaseToken, out string deviceToken)
@@ -130,9 +142,16 @@ namespace EncryptedMessaging
 		}
 		internal string OldName;
 		private string _name;
+		/// <summary>
+		/// Update the name of the group.
+		/// </summary>
 		public string Name { get => _name; set { OldName = _name; _name = value; } }
 		public bool IsUpdate = false;
 		public List<Properties> Participants = new List<Properties>();
+		
+		/// <summary>
+		/// Strings used in this class
+		/// </summary>
 		public class Properties
 		{
 			public string Name;
@@ -142,6 +161,12 @@ namespace EncryptedMessaging
 			public string FirebaseToken;
 			public string DeviceToken;
 		}
+
+		/// <summary>
+		/// Get the keys of the particpant bu converting the byte array input.
+		/// </summary>
+		/// <param name="context">Context</param>
+		/// <returns>Keys</returns>
 		public List<byte[]> GetParticipantsKeys(Context context)
 		{
 			var result = new List<byte[]>();
@@ -150,6 +175,16 @@ namespace EncryptedMessaging
 			return result;
 		}
 
+		/// <summary>
+		/// Assign public keys to the partipants and set the firebase and device token for the users.
+		/// </summary>
+		/// <param name="contact">User contact</param>
+		/// <param name="context">Context</param>
+		/// <param name="addFirebaseTokken">Token Firebase</param>
+		/// <param name="addDeviceTokken">Device Token of iOS</param>
+		/// <param name="fullDataParticipant"></param>
+		/// <param name="purposeIsUpdateOnly">Update contact</param>
+		/// <returns></returns>
 		public static byte[] GetDataMessageContact(Contact contact, Context context, bool addFirebaseTokken = true, bool addDeviceTokken = true, bool fullDataParticipant = true, bool purposeIsUpdateOnly = false)
 		{
 			// [D] = data length
@@ -222,10 +257,27 @@ namespace EncryptedMessaging
 			return data;
 		}
 
+		/// <summary>
+		/// Get the contact info of the other user from the base 64 string.
+		/// </summary>
+		/// <param name="contact">User contact</param>
+		/// <param name="context">context</param>
+		/// <returns></returns>
 		public static string GetQrCode(Contact contact, Context context) => Convert.ToBase64String(GetDataMessageContact(contact, context));
 
+		/// <summary>
+		/// Get the contact onfo of the person using the app from base 64 string.
+		/// </summary>
+		/// <param name="context">context</param>
+		/// <returns></returns>
 		public static string GetMyQrCode(Context context) => Convert.ToBase64String(GetDataMessageContact(context.Contacts.GetMyContact(), context));
 
+		/// <summary>
+		/// Create new contact by using the QR code
+		/// </summary>
+		/// <param name="qrCode">QR code</param>
+		/// <param name="context">Context</param>
+		/// <param name="sendMyContact">Option to send my contact to the contact I add</param>
 		public static void AddContact(string qrCode, Context context, Contacts.SendMyContact sendMyContact = Contacts.SendMyContact.Send)
 		{
 			var contactMessage = new ContactMessage(qrCode);

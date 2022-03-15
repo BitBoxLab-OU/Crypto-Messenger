@@ -9,7 +9,7 @@ using System.Threading;
 namespace CommunicationChannel
 {
     /// <summary>
-    /// 
+    /// This class is used for establishing link connection and communicating with the server.
     /// </summary>
     internal class Tcp
     {
@@ -408,6 +408,9 @@ namespace CommunicationChannel
 
 
         internal void InvokeError(ErrorType errorId, string description) => Channel.OnTcpError(errorId, description);
+        /// <summary>
+        /// Provides the base for enumerations to represent errors.
+        /// </summary>
         public enum ErrorType
         {
             Working,
@@ -420,7 +423,7 @@ namespace CommunicationChannel
         }
 
         /// <summary>
-        /// 
+        /// Used to make a connection if the communication link breaks.
         /// </summary>
         /// <param name="tryConnectAgain"></param>
         public void Disconnect(bool tryConnectAgain = true)
@@ -453,7 +456,7 @@ namespace CommunicationChannel
             }
         }
         /// <summary>
-        /// 
+        /// Find if the socket is connected to the remote host.
         /// </summary>
         /// <returns></returns>
         public bool IsConnected() =>

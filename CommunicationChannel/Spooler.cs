@@ -7,7 +7,7 @@ using System.Threading;
 namespace CommunicationChannel
 {
 	/// <summary>
-	/// 
+	/// This class is used for saving, updating the data in the queue list.
 	/// </summary>
 	internal class Spooler
 	{
@@ -60,9 +60,9 @@ namespace CommunicationChannel
 		private int _progressive;
 		private readonly List<Tuple<uint, int>> _inQuee = new List<Tuple<uint, int>>();  // Tuple<int, int> = Tuple<idData, progressive>
 		/// <summary>
-		/// 
+		/// Add the data to the spooler Queue.
 		/// </summary>
-		/// <param name="data"></param>
+		/// <param name="data">byte array</param>
 		public void AddToQuee(byte[] data)
 		{
 			//_channell.Tcp.Connect();
@@ -81,7 +81,12 @@ namespace CommunicationChannel
 			if (Queue.Count == 1) //if the Queue is empty, the spooler is stopped, then re-enable the spooler
 				SendNext(false);
 		}
-		private void RemovePersistent(uint dataId)
+
+		/// <summary>
+		/// Remove the data that from the spooler Queue.
+		/// </summary>
+		/// <param name="dataId"> Data id</param>
+		public void RemovePersistent(uint dataId)
 		{
 			if (_persistentQuee)
 			{
@@ -107,11 +112,11 @@ namespace CommunicationChannel
 					stream.Write(item.Item2.GetBytes(), 0, 4);
 		}
 		/// <summary>
-		/// 
+		/// On send completed it remove the sent packet and insert in the spooler queue before closing the communication channnel.
 		/// </summary>
-		/// <param name="data"></param>
-		/// <param name="ex"></param>
-		/// <param name="connectionIsLost"></param>
+		/// <param name="data">data</param>
+		/// <param name="ex">exception</param>
+		/// <param name="connectionIsLost">connection status</param>
 		public void OnSendCompleted(byte[] data, Exception ex, bool connectionIsLost)
 		{
 			if (ex != null)
@@ -127,9 +132,9 @@ namespace CommunicationChannel
 		}
 		internal List<Tuple<uint, Action>> ExecuteOnConfirmReceipt = new List<Tuple<uint, Action>>();
 		/// <summary>
-		/// 
+		/// Confirm the receipt status on the sent data before sending the next message
 		/// </summary>
-		/// <param name="dataId"></param>
+		/// <param name="dataId"> data ID</param>
 		public void OnConfirmReceipt(uint dataId)
 		{
 			lock (_channell.Tcp.DataAwaitingConfirmation)

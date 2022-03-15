@@ -6,14 +6,26 @@ using static EncryptedMessaging.ContactConverter;
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// This class contains all functions used for multiple contacts/group functionalities associated with them.
+    /// </summary>
     public class Contacts
     {
+        /// <summary>
+        /// Set the time stamp when a message is sent to the participants.
+        /// </summary>
+        /// <param name="context"></param>
         public Contacts(Context context)
         {
             Context = context;
             var timerRefreshLastMessageTimeDistance = new Timer(RefreshLastMessageTimeDistance, null, 60000, 60000); //If the garbage collector eliminates it, put it as static
         }
         private readonly Context Context;
+
+        /// <summary>
+        /// Add new participants to the group.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         public class Observable<T> : System.Collections.ObjectModel.ObservableCollection<T>
         {
             //code based on https://peteohanlon.wordpress.com/2008/10/22/bulk-loading-in-observablecollection/
@@ -23,6 +35,11 @@ namespace EncryptedMessaging
                 if (!_suppressNotification)
                     base.OnCollectionChanged(e);
             }
+            
+            /// <summary>
+            /// Update the partipants list.
+            /// </summary>
+            /// <param name="list">list</param>
             public void Update(IEnumerable<T> list)
             {
                 _suppressNotification = true;
@@ -50,11 +67,14 @@ namespace EncryptedMessaging
             }
         }
 
+        /// <summary>
+        /// This Fucktion is used to restore a contact from the cloud storage.
+        /// </summary>
         public void RestoreContactFromCloud()
         {
             // the response are processed in class ProcessResponsesFromCloud
-            Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
-            Cloud.SendCloudCommands.GetAllObject(Context, "Contact");
+            Context.CloudManager?.LoadDataFromCloud("String", "MyName"); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
+            Context.CloudManager?.LoadAllDataFromCloud("Contact"); // Cloud.SendCloudCommands.GetAllObject(Context, "Contact");            
         }
 
         //public void ReadPosts() => ForEachContact(contact =>
@@ -374,6 +394,12 @@ namespace EncryptedMessaging
             return contact;
         }
 
+        /// <summary>
+        /// Add contact from the imput strng QR code.
+        /// </summary>
+        /// <param name="qrCode">QR code </param>
+        /// <param name="sendMyContact">Option to send my contact to the contact I add</param>
+        /// <returns></returns>
         public Contact AddContact(string qrCode, SendMyContact sendMyContact = SendMyContact.Send)
         {
             var contactMessage = new ContactMessage(Convert.FromBase64String(qrCode));
@@ -456,6 +482,15 @@ namespace EncryptedMessaging
             return !AddContact(contact, sendMyContact) ? null : contact;
         }
 
+        /// <summary>
+        /// Add contact to the address book, if the contact already exist, return duplicate. 
+        /// </summary>
+        /// <param name="participants">Users in the list.</param>
+        /// <param name="name">The name of the group/contact</param>
+        /// <param name="isServer">Is a server (It will not be visible in the contacts directory)</param>
+        /// <param name="language">Language</param>
+        /// <param name="sendMyContact">Option to send my contact to the contact I add</param>
+        /// <returns></returns>
         public Contact AddContact(List<byte[]> participants, string name = null, bool isServer = false, string language = null, SendMyContact sendMyContact = SendMyContact.Send)
         {
             if (participants == null)
@@ -474,12 +509,20 @@ namespace EncryptedMessaging
             return contact;
         }
 
+        /// <summary>
+        /// Remove the contact from the address book.
+        /// </summary>
+        /// <param name="contact"></param>
         public void RemoveContact(Contact contact)
         {
             contact.Delete();
             ContactsListChanged?.Invoke(ContactsVisibled);
         }
 
+        /// <summary>
+        /// Remove the contact from the address book.
+        /// </summary>
+        /// <param name="key">Public key</param>
         public void RemoveContact(string key)
         {
             Contact contact = ContactsList.ToList().Find(x => x.PublicKeys == key);
@@ -487,6 +530,10 @@ namespace EncryptedMessaging
                 RemoveContact(contact);
         }
 
+        /// <summary>
+        /// Clear the chat history with the contact.
+        /// </summary>
+        /// <param name="key">Public key</param>
         public void ClearContact(string key)
         {
             Contact contact = ContactsList.ToList().Find(x => x.PublicKeys == key);
@@ -501,6 +548,11 @@ namespace EncryptedMessaging
             }
         }
 
+        /// <summary>
+        /// Get the List of contacts in the group.
+        /// </summary>
+        /// <param name="chatId">64 bit unsigned integer</param>
+        /// <returns></returns>
         public List<byte[]> GetParticipants(ulong chatId)
         {
             lock (ContactsList)
@@ -510,12 +562,22 @@ namespace EncryptedMessaging
             }
         }
 
+        /// <summary>
+        /// Get the single  contact stored in the list.
+        /// </summary>
+        /// <param name="chatId">64 bit unsigned integer</param>
+        /// <returns></returns>
         public Contact GetContact(ulong chatId)
         {
             lock (ContactsList)
                 return ContactsList.ToList().Find((x) => x.ChatId == chatId);
         }
 
+        /// <summary>
+        /// Get contacts by user Id, if not present, returns a null value.
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public Contact GetContactByUserID(ulong userId)
         {
             lock (ContactsList)
@@ -544,7 +606,7 @@ namespace EncryptedMessaging
         /// <summary>
         /// If the participant is present in the address book, he returns his name, otherwise he invents a name
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="key">Public key</param>
         /// <returns></returns>
         public string GetParticipantName(byte[] key)
         {
@@ -552,6 +614,11 @@ namespace EncryptedMessaging
             return (participant != null) ? participant.Name : Pseudonym(new List<byte[]>() { key });
         }
 
+        /// <summary>
+        /// Look for contacts in the group list and add new partipants if not present already.
+        /// </summary>
+        /// <param name="contact">>The list of source contact to create a group</param>
+        /// <returns></returns>
         public List<Contact> GetGroupParicipantContacts(Contact contact)
         {
             var contacts = new List<Contact>();
@@ -595,12 +662,32 @@ namespace EncryptedMessaging
         /// <returns>Returns the duplicate contact if it already exists, otherwise null</returns>
         public Contact ContactAlreadyExists(string publicKeys, string name) => Context.ContactConverter.PublicKeysToParticipants(publicKeys, out List<byte[]> participants) ? ContactAlreadyExists(participants, name) : null;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="publicKeys"></param>
+        /// <returns></returns>
         public string Pseudonym(string publicKeys) => Context.ContactConverter.PublicKeysToParticipants(publicKeys, out List<byte[]> participants) ? Pseudonym(participants) : null;
 
+        /// <summary>
+        /// Assign a Pseudonym for a participant  in the list.
+        /// </summary>
+        /// <param name="participants"></param>
+        /// <returns></returns>
         public string Pseudonym(List<byte[]> participants) => Pseudonym(ParticipantsToUserIds(participants, Context));
 
+        /// <summary>
+        /// Assign a Pseudonym for a participant for the unisgned long integer input in the list.
+        /// </summary>
+        /// <param name="userId">Unsigned long integer</param>
+        /// <returns></returns>
         public string Pseudonym(ulong userId) => Pseudonym(new List<ulong>(new ulong[] { userId }));
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userIds"></param>
+        /// <returns></returns>
         private string Pseudonym(List<ulong> userIds)
         {
             var rnd = ParticipantsToRandom(userIds);
@@ -612,8 +699,20 @@ namespace EncryptedMessaging
             return Functions.FirstUpper(result);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="light"></param>
+        /// <param name="dark"></param>
         public void Colors(ulong userId, out System.Drawing.Color light, out System.Drawing.Color dark) => Colors(new List<ulong>(new ulong[] { userId }), out light, out dark);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="participants"></param>
+        /// <param name="light"></param>
+        /// <param name="dark"></param>
         public void Colors(List<byte[]> participants, out System.Drawing.Color light, out System.Drawing.Color dark) => Colors(ParticipantsToUserIds(participants, Context), out light, out dark);
 
         internal void Colors(List<ulong> userIds, out System.Drawing.Color light, out System.Drawing.Color dark)
@@ -648,6 +747,11 @@ namespace EncryptedMessaging
             return new Random(BitConverter.ToInt32(BitConverter.GetBytes(seed), 0));
         }
 
+        /// <summary>
+        /// Create Contact user data in the contact is null.
+        /// </summary>
+        /// <param name="nameless"></param>
+        /// <returns></returns>
         public Contact GetMyContact(bool nameless = false)
         {
             return nameless ? Context.My.CreateMyContact(nameless) : Context.My.Contact;
@@ -661,6 +765,10 @@ namespace EncryptedMessaging
 
         public static ulong CloudUserId;
         //#endif
+        /// <summary>
+        /// If the contact is null on cloud, then it is stored on the cloud server.
+        /// </summary>
+        /// <returns></returns>
         public Contact GetCloudContact()
         {
             if (_cloud == null)

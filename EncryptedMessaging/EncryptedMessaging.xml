@@ -4,99 +4,129 @@
         <name>EncryptedMessaging</name>
     </assembly>
     <members>
-        <member name="T:EncryptedMessaging.Cloud.SendCloudCommands">
+        <member name="T:EncryptedMessaging.Bytes">
             <summary>
-            This class contains commands that can be sent to the cloud server
-            </summary>b
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.GetBackupUser(EncryptedMessaging.Context)">
-            <summary>
-            Ask for contact
+            This class is used for combining and converting Byte array based on the input.
             </summary>
-            <param name="context"></param>
         </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.PostBackupUser(EncryptedMessaging.Context,System.Byte[],System.String,System.String,System.String,EncryptedMessaging.Contact)">
+        <member name="M:EncryptedMessaging.Bytes.Combine(System.Byte[],System.Byte[][])">
             <summary>
-            Send a post message which contains the data of my contact
+            Combines the byte array with the item in the element 
+            </summary>
+            <param name="me">Byte</param>
+            <param name="element">Array</param>
+            <returns>First</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.Combine(System.Byte[],System.Byte[])">
+            <summary>
+            Combines the Byte wuth Byte array.
+            </summary>
+            <param name="me">Byte</param>
+            <param name="byteArray"> Byte array </param>
+            <returns>Byte</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.Take(System.Byte[],System.Int32)">
+            <summary>
+            Convert and copy byte array to a numeric representation.
+            </summary>
+            <param name="source">Byte source</param>
+            <param name="length">numeric value</param>
+            <returns>Byte length</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.Skyp(System.Byte[],System.Int32)">
+            <summary>
+            Copies a specified number of bytes from a source array starting at a particular offset to a destination array starting at a particular offset.
+            </summary>
+            <param name="source">Source array</param>
+            <param name="offset">range</param>
+            <returns>Result</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.SequenceEqual(System.Byte[],System.Byte[])">
+            <summary>
+            Compare the source byte array with the length.
+            </summary>
+            <param name="source">source byte array</param>
+            <param name="compareTo"> byte array </param>
+            <returns>Boolean</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.GetBytes(System.Int32)">
+            <summary>
+            Returns the specified integer value as an array of bytes.		
+            </summary>
+            <param name="value">integer</param>
+            <returns>Byte array</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.GetBytes(System.UInt32)">
+            <summary>
+            Returns the specified unsigned integer value as an array of bytes.
+            </summary>
+            <param name="value">unsigned integer</param>
+            <returns>Byte array</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.GetBytes(System.Int64)">
+            <summary>
+            Returns the specified 64-bit signed integer value as an array of bytes.
+            </summary>
+            <param name="value"> 64-bit signed integer</param>
+            <returns>>Byte array</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Bytes.GetBytes(System.UInt64)">
+            <summary>
+            Returns the specified 64-bit unsigned integer value as an array of bytes.
+            </summary>
+            <param name="value"> 64-bit unsigned integer</param>
+            <returns>>Byte array</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ICloudManager.SaveDataOnCloud(System.String,System.String,System.Byte[],System.Boolean)">
+            <summary>
+            Save a data to the cloud in a set type, with a name key
+            </summary>
+            <param name="type">The group to which the data belongs</param>
+            <param name="name">The unique key assigned to the object</param>
+            <param name="data">An array of data to save </param>
+            <param name="shared">If true, save the data in a common area among all contacts, otherwise they will be saved in a private area accessible only to the current user</param>
+        </member>
+        <member name="M:EncryptedMessaging.ICloudManager.LoadDataFromCloud(System.String,System.String,System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Sends a previously saved data request command, and if it exists an event will be generated OnDataLoad
+            </summary>
+            <param name="type">The group to which the data belongs</param>
+            <param name="name">The unique key assigned to the object</param>
+            <param name="ifSizeIsDifferent">Upload the data only if the size has changed (It is an empirical method to avoid creating communication traffic for data we already have, it would be more correct to use a hash, but this creates a computational load on the cloud)</param>
+            <param name="shared">If true, load the data from a common area among all contacts, otherwise they will be load from a private area accessible only to the current user</param>
+        </member>
+        <member name="M:EncryptedMessaging.ICloudManager.LoadAllDataFromCloud(System.String,System.Boolean)">
+            <summary>
+            Upload from the cloud all the data saved in a specific type group. An event OnDataLoad will be generated for each data
+            </summary>
+            <param name="type">The group to which the data belongs</param>
+            <param name="shared">If true, load the data from a common area among all contacts, otherwise they will be load from a private area accessible only to the current user</param>
+        </member>
+        <member name="M:EncryptedMessaging.ICloudManager.DeleteDataOnCloud(System.String,System.String,System.Boolean)">
+            <summary>
+            Delete a data that has been saved on the cloud
+            </summary>
+            <param name="type">The group to which the data belongs</param>
+            <param name="name">The unique key assigned to the object</param>
+            <param name="shared">If true, an object in the common area will be deleted, otherwise an object will be deleted from the private area accessible only to the current user</param>
+        </member>
+        <member name="T:EncryptedMessaging.Contact">
+            <summary>
+            This class contains all the functionalities related to contact features.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Contact.#ctor(EncryptedMessaging.Context,System.Collections.Generic.List{System.Byte[]},System.String,System.String,EncryptedMessaging.Contact.RuntimePlatform,System.String,System.String,System.Boolean)">
+            <summary>
+            Checks if the chat initiated is between a single user or multiple partipants/group. 
             </summary>
             <param name="context">Context</param>
-            <param name="publicKey">Public key</param>
-            <param name="userName">Name of contact</param>
+            <param name="participants">Users in the contacts</param>
+            <param name="name">Name of the user</param>
+            <param name="language">Application language</param>
+            <param name="os">Operating system</param>
             <param name="firebaseToken">Token Firebase</param>
             <param name="deviceToken">Device Token of iOS</param>
-            <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.GetAvatar(EncryptedMessaging.Context,System.UInt64,System.Int32)">
-            <summary>
-            Request a user's avatar from the cloud
-            </summary>
-            <param name="context">Context</param>
-            <param name="ofUserId">Request this user's avatar</param>
-            <param name="lastSize">Used to check the length of the file to avoid resending the avatar if it has not been updated</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.PostAvatar(EncryptedMessaging.Context,System.Byte[],EncryptedMessaging.Contact,System.Nullable{System.UInt64})">
-            <summary>
-            Send a post message which contains the data of a contact.
-            You can use this command to set your avatar in the cloud, or the cloud can use this command to set a contact's avatar to the client when it asks for it.
-            </summary>
-            <param name="context">Context</param>
-            <param name="data">Data of picture</param>
-            <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-            <param name="ofUserId">This parameter is mandatory if sendToClient is set</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.PostObject(EncryptedMessaging.Context,System.String,System.String,System.Byte[],EncryptedMessaging.Contact)">
-            <summary>
-            Send an item to save to the cloud or to keep on the client
-            </summary>
-            <param name="context">Context</param>
-            <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
-            <param name="key">An identification key allows you to identify the data by giving it a name</param>
-            <param name="objectData">The data that represents the object</param>
-            <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.DeleteObject(EncryptedMessaging.Context,System.String,System.String,EncryptedMessaging.Contact)">
-            <summary>
-            Delete a object in the cloud
-            </summary>
-            <param name="context">Context</param>
-            <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
-            <param name="key">An identification key allows you to identify the data by giving it a name</param>
-            <param name="sendToClient">Indicates the client where to send the post, if null the post will be sent to the cloud server</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.GetObject(EncryptedMessaging.Context,System.String,System.String,EncryptedMessaging.Contact)">
-            <summary>
-            Send an get request to cloud or client.  The response are processed in class ProcessResponsesFromCloud the method <see cref="M:EncryptedMessaging.ProcessResponsesFromCloud.OnData(EncryptedMessaging.Context,System.String,System.String,System.Byte[])">OnData</see>
-            </summary>
-            <param name="context">Context</param>
-            <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
-            <param name="key">Object ID, if null then is a request of all object</param>
-            <param name="sendToClient">Indicates the client where to send the request, if null the request will be sent to the cloud server</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.SendCloudCommands.GetAllObject(EncryptedMessaging.Context,System.String,EncryptedMessaging.Contact)">
-            <summary>
-            Send an get request to cloud or client. The response are processed in class ProcessResponsesFromCloud the method <see cref="M:EncryptedMessaging.ProcessResponsesFromCloud.OnData(EncryptedMessaging.Context,System.String,System.String,System.Byte[])">OnData</see>
-            </summary>
-            <param name="context">Context</param>
-            <param name="objectTypeName">The name of the object type, for example "String", is used to group objects</param>
-            <param name="sendToClient">Indicates the client where to send the request, if null the request will be sent to the cloud server</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.ReceiveCloudCommands.ExecuteMessage(EncryptedMessaging.Context,EncryptedMessaging.Message,System.Collections.Generic.Dictionary{System.Byte,System.Byte[]})">
-            <summary>
-            This routine performs the necessary actions for received messages, both Post and Get
-            </summary>
-            <param name="keyValue">Pairs of keys and values received</param>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.ReceiveCloudCommands.EraseNotUsedAccount">
-            <summary>
-            Erase the data of accounts that are no longer in use. If you use a custom path to keep data on the cloud, a timer will periodically call this function to clean up
-            </summary>
-        </member>
-        <member name="M:EncryptedMessaging.Cloud.ReceiveCloudCommands.OnCommand(EncryptedMessaging.Context,EncryptedMessaging.Message)">
-            <summary>
-            This event is automatically executed when a command is received from another client. You can receive its request (Get) and data entry (Post) commands
-            </summary>
-            <param name="context">Command type</param>
-            <param name="message">The client contact who created the command</param>
+            <param name="isServer">Is a server</param>
         </member>
         <member name="F:EncryptedMessaging.Contact.Session">
             <summary>
@@ -109,9 +139,25 @@
             </summary>
             <returns>Contact's real name if set</returns>
         </member>
+        <member name="P:EncryptedMessaging.Contact.Name">
+            <summary>
+            Get the contact's name (if set), otherwise return null.
+            </summary>
+        </member>
         <member name="P:EncryptedMessaging.Contact.MyRemoteName">
             <summary>
             The name of my contact registered on the recipient's device
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Contact.Pseudonym">
+            <summary>
+            Set assumed Pseudonyms for the participants in the group.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:EncryptedMessaging.Contact.PublicKeys">
+            <summary>
+            Check if public key exists
             </summary>
         </member>
         <member name="M:EncryptedMessaging.Contact.ReadPosts(System.Boolean)">
@@ -186,6 +232,21 @@
             Indicates whether messages are required to be translated. If you change this parameter, you need to save the contact
             </summary>
         </member>
+        <member name="T:EncryptedMessaging.Contact.MessageInfo">
+            <summary>
+            Set message information on creation and sent.
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.Contact.RemoteReaded">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Contact.RemoteReaded.#ctor">
+            <summary>
+            Add a timestamp to the message.
+            </summary>
+        </member>
         <member name="M:EncryptedMessaging.Contact.GetLastMessage">
             <summary>
             Returns null if there are no messages in the chat
@@ -217,6 +278,17 @@
             It can be used by the client program to store the user interface of this chat
             </summary>
         </member>
+        <member name="T:EncryptedMessaging.ContactConverter">
+            <summary>
+            This class is used for converting contacts to public keys.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.#ctor(EncryptedMessaging.Context)">
+            <summary>
+            Set the context to readonly.
+            </summary>
+            <param name="context">Context</param>
+        </member>
         <member name="M:EncryptedMessaging.ContactConverter.GetUserId(System.Byte[])">
             <summary>
             From the public key he obtains the user ID, a unique number represented by 8 bytes (ulong)
@@ -230,15 +302,84 @@
             This function obtains the list of participants from a string that represents everyone's public key
             </summary>
             <param name="publicKeys">string that represents everyone's public key</param>
+            <returns>Boolean</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ParticipantsToPublicKeys(System.Collections.Generic.List{System.Byte[]},System.String@,System.Boolean)">
+            <summary>
+            Boolean check for validating key.
+            </summary>
+            <param name="participants">Partipants</param>
+            <param name="publicKeys">Public Key</param>
+            <param name="removeMyKey">Remove Key</param>
             <returns></returns>
         </member>
         <member name="M:EncryptedMessaging.ContactConverter.ParticipantsToChatId(System.Collections.Generic.List{System.Byte[]},System.String)">
             <summary>
             Calculate the hash id of the contact. For groups, the name also comes into play in the computation because there can be groups with the same participants but different names
             </summary>
-            <param name="participants"></param>
+            <param name="participants">Partipants</param>
             <param name="name">The name parameter must only be passed for groups, because there are groups with the same members but different names</param>
+            <returns>Unisgned Integer</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ValidateKeys(System.Collections.Generic.List{System.Byte[]})">
+            <summary>
+            
+            </summary>
+            <param name="participants"></param>
             <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ValidateKeys(System.String)">
+            <summary>
+            Boolean check for partipants public keys.
+            </summary>
+            <param name="keys">Key</param>
+            <returns>Boolean</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ValidateKey(System.String)">
+            <summary>
+            This will check if the basekey is valid , if not key is converted from base 64 key.
+            </summary>
+            <param name="base64Key"></param>
+            <returns>key</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ValidateKey(System.Byte[])">
+            <summary>
+            Validates the key provided.
+            </summary>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.NormalizeParticipants(System.Collections.Generic.List{System.Byte[]}@,System.Boolean)">
+            <summary>
+            Remove they key if it is not null and assign a new Public key Binary for empty values.
+            </summary>
+            <param name="participants">Participants</param>
+            <param name="removeMyKey">Byte array</param>
+        </member>
+        <member name="M:EncryptedMessaging.ContactConverter.ParticipantsToUserIds(System.Collections.Generic.List{System.Byte[]},EncryptedMessaging.Context)">
+            <summary>
+            Change the partipants to their specific User Ids.
+            </summary>
+            <param name="participants">Partipants</param>
+            <param name="context">Context</param>
+            <returns>User Id</returns>
+        </member>
+        <member name="T:EncryptedMessaging.ContactMessage">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.#ctor(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data">Byte array</param>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.#ctor(System.String)">
+            <summary>
+            Convert  the QR code to base 64 string.
+            </summary>
+            <param name="qrCode">QR code</param>
         </member>
         <member name="M:EncryptedMessaging.ContactMessage.GetContactMessage(System.Byte[])">
             <summary>
@@ -258,9 +399,89 @@
             <summary>
             Return the OS and language for a non-group contact
             </summary>
-            <param name="context"></param>
+            <param name="context">Context</param>
             <param name="language">Language</param>
             <param name="os">Os</param>
+        </member>
+        <member name="P:EncryptedMessaging.ContactMessage.Name">
+            <summary>
+            Update the name of the group.
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.ContactMessage.Properties">
+            <summary>
+            Strings used in this class
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.GetParticipantsKeys(EncryptedMessaging.Context)">
+            <summary>
+            Get the keys of the particpant bu converting the byte array input.
+            </summary>
+            <param name="context">Context</param>
+            <returns>Keys</returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.GetDataMessageContact(EncryptedMessaging.Contact,EncryptedMessaging.Context,System.Boolean,System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Assign public keys to the partipants and set the firebase and device token for the users.
+            </summary>
+            <param name="contact">User contact</param>
+            <param name="context">Context</param>
+            <param name="addFirebaseTokken">Token Firebase</param>
+            <param name="addDeviceTokken">Device Token of iOS</param>
+            <param name="fullDataParticipant"></param>
+            <param name="purposeIsUpdateOnly">Update contact</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.GetQrCode(EncryptedMessaging.Contact,EncryptedMessaging.Context)">
+            <summary>
+            Get the contact info of the other user from the base 64 string.
+            </summary>
+            <param name="contact">User contact</param>
+            <param name="context">context</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.GetMyQrCode(EncryptedMessaging.Context)">
+            <summary>
+            Get the contact onfo of the person using the app from base 64 string.
+            </summary>
+            <param name="context">context</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.ContactMessage.AddContact(System.String,EncryptedMessaging.Context,EncryptedMessaging.Contacts.SendMyContact)">
+            <summary>
+            Create new contact by using the QR code
+            </summary>
+            <param name="qrCode">QR code</param>
+            <param name="context">Context</param>
+            <param name="sendMyContact">Option to send my contact to the contact I add</param>
+        </member>
+        <member name="T:EncryptedMessaging.Contacts">
+            <summary>
+            This class contains all functions used for multiple contacts/group functionalities associated with them.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.#ctor(EncryptedMessaging.Context)">
+            <summary>
+            Set the time stamp when a message is sent to the participants.
+            </summary>
+            <param name="context"></param>
+        </member>
+        <member name="T:EncryptedMessaging.Contacts.Observable`1">
+            <summary>
+            Add new participants to the group.
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Observable`1.Update(System.Collections.Generic.IEnumerable{`0})">
+            <summary>
+            Update the partipants list.
+            </summary>
+            <param name="list">list</param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.RestoreContactFromCloud">
+            <summary>
+            This Fucktion is used to restore a contact from the cloud storage.
+            </summary>
         </member>
         <member name="M:EncryptedMessaging.Contacts.SortContacts(System.Boolean)">
             <summary>
@@ -270,13 +491,19 @@
         </member>
         <member name="M:EncryptedMessaging.Contacts.GetContacts">
             <summary>
-            Get a observable contact list
+            Get a observable contact list.
             </summary>
             <returns></returns>
         </member>
+        <member name="M:EncryptedMessaging.Contacts.ForEachContact(System.Action{EncryptedMessaging.Contact})">
+            <summary>
+            For each visible contact it performs an action (Server-type contacts are excluded from performing the action, because they are generally not visible in the Address Book).
+            </summary>
+            <param name="action">Action to execute</param>
+        </member>
         <member name="T:EncryptedMessaging.Contacts.OnContactAddedHandler">
             <summary>
-            Delegate for the event that is triggered when a contact is added
+            Delegate for the event that is triggered when a contact is added.
             </summary>
             <param name="contact">The new contact added</param>
         </member>
@@ -287,7 +514,7 @@
         </member>
         <member name="M:EncryptedMessaging.Contacts.AddContact(EncryptedMessaging.Contact,EncryptedMessaging.Contacts.SendMyContact,System.Boolean,EncryptedMessaging.ContactMessage)">
             <summary>
-            Add a new contact and send it if necessary
+            Add a new contact and send it if necessary.
             </summary>
             <param name="contact">Contact to add</param>
             <param name="sendMyContact">Option to send my contact to the contact I add</param>
@@ -323,6 +550,14 @@
             <param name="sendMyContact">Define whether the contact added here should receive our contact via the network, whether with the name or without. If we send our contact without a name, the recipient will only update the Firebase tokens and the device id, if instead the contact has the name, the recipient will add our contact including our real name.</param>
             <returns></returns>
         </member>
+        <member name="M:EncryptedMessaging.Contacts.AddContact(System.String,EncryptedMessaging.Contacts.SendMyContact)">
+            <summary>
+            Add contact from the imput strng QR code.
+            </summary>
+            <param name="qrCode">QR code </param>
+            <param name="sendMyContact">Option to send my contact to the contact I add</param>
+            <returns></returns>
+        </member>
         <member name="M:EncryptedMessaging.Contacts.AddContact(System.Collections.Generic.List{EncryptedMessaging.Contact},System.String,System.Boolean,EncryptedMessaging.Contacts.SendMyContact)">
             <summary>
             Add a contact to the address book, if there is already a contact with the same key then the existing contact will be renamed
@@ -353,6 +588,56 @@
             <param name="sendMyContact">Option to send my contact to the contact I add</param>
             <returns></returns>
         </member>
+        <member name="M:EncryptedMessaging.Contacts.AddContact(System.Collections.Generic.List{System.Byte[]},System.String,System.Boolean,System.String,EncryptedMessaging.Contacts.SendMyContact)">
+            <summary>
+            Add contact to the address book, if the contact already exist, return duplicate. 
+            </summary>
+            <param name="participants">Users in the list.</param>
+            <param name="name">The name of the group/contact</param>
+            <param name="isServer">Is a server (It will not be visible in the contacts directory)</param>
+            <param name="language">Language</param>
+            <param name="sendMyContact">Option to send my contact to the contact I add</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.RemoveContact(EncryptedMessaging.Contact)">
+            <summary>
+            Remove the contact from the address book.
+            </summary>
+            <param name="contact"></param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.RemoveContact(System.String)">
+            <summary>
+            Remove the contact from the address book.
+            </summary>
+            <param name="key">Public key</param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.ClearContact(System.String)">
+            <summary>
+            Clear the chat history with the contact.
+            </summary>
+            <param name="key">Public key</param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetParticipants(System.UInt64)">
+            <summary>
+            Get the List of contacts in the group.
+            </summary>
+            <param name="chatId">64 bit unsigned integer</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetContact(System.UInt64)">
+            <summary>
+            Get the single  contact stored in the list.
+            </summary>
+            <param name="chatId">64 bit unsigned integer</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetContactByUserID(System.UInt64)">
+            <summary>
+            Get contacts by user Id, if not present, returns a null value.
+            </summary>
+            <param name="userId"></param>
+            <returns></returns>
+        </member>
         <member name="M:EncryptedMessaging.Contacts.GetParticipant(System.Byte[])">
             <summary>
             Look for a contact based on his public key, if not present in the book, a null value will be returned;
@@ -365,7 +650,14 @@
             <summary>
             If the participant is present in the address book, he returns his name, otherwise he invents a name
             </summary>
-            <param name="key"></param>
+            <param name="key">Public key</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetGroupParicipantContacts(EncryptedMessaging.Contact)">
+            <summary>
+            Look for contacts in the group list and add new partipants if not present already.
+            </summary>
+            <param name="contact">>The list of source contact to create a group</param>
             <returns></returns>
         </member>
         <member name="M:EncryptedMessaging.Contacts.ContactAlreadyExists(System.Collections.Generic.List{System.Byte[]},System.String)">
@@ -382,6 +674,63 @@
             </summary>
             <param name="publicKeys">PublicKeys of contact</param>
             <returns>Returns the duplicate contact if it already exists, otherwise null</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Pseudonym(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="publicKeys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Pseudonym(System.Collections.Generic.List{System.Byte[]})">
+            <summary>
+            Assign a Pseudonym for a participant  in the list.
+            </summary>
+            <param name="participants"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Pseudonym(System.UInt64)">
+            <summary>
+            Assign a Pseudonym for a participant for the unisgned long integer input in the list.
+            </summary>
+            <param name="userId">Unsigned long integer</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Pseudonym(System.Collections.Generic.List{System.UInt64})">
+            <summary>
+            
+            </summary>
+            <param name="userIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Colors(System.UInt64,System.Drawing.Color@,System.Drawing.Color@)">
+            <summary>
+            
+            </summary>
+            <param name="userId"></param>
+            <param name="light"></param>
+            <param name="dark"></param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.Colors(System.Collections.Generic.List{System.Byte[]},System.Drawing.Color@,System.Drawing.Color@)">
+            <summary>
+            
+            </summary>
+            <param name="participants"></param>
+            <param name="light"></param>
+            <param name="dark"></param>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetMyContact(System.Boolean)">
+            <summary>
+            Create Contact user data in the contact is null.
+            </summary>
+            <param name="nameless"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Contacts.GetCloudContact">
+            <summary>
+            If the contact is null on cloud, then it is stored on the cloud server.
+            </summary>
+            <returns></returns>
         </member>
         <member name="T:EncryptedMessaging.Context">
             <summary>
@@ -457,9 +806,9 @@
             <summary>
             Delegate for the event that notifies when messages are sent
             </summary>
-            <param name="contact"></param>
-            <param name="deliveredTime"></param>
-            <param name="isMy"></param>
+            <param name="contact">Contact (group or single user)</param>
+            <param name="deliveredTime">When message was delivered.</param>
+            <param name="isMy">Boolean</param>
         </member>
         <member name="E:EncryptedMessaging.Context.OnMessageDelivered">
             <summary>
@@ -471,7 +820,7 @@
             thread-safe calls
             https://docs.microsoft.com/en-us/dotnet/desktop/winforms/controls/how-to-make-thread-safe-calls?view=netdesktop-6.0
             </summary>
-            <param name="action"></param>
+            <param name="action">trigger event</param>
         </member>
         <member name="M:EncryptedMessaging.Context.RunAfterInstanceCreate(System.Object)">
             <summary>
@@ -501,7 +850,7 @@
             Function that must be called whenever the host system has a change of state on the connection. This parameter must be set when starting the application.
             If it is not set, the libraries do not know if there are changes in the state of the internet connection, and the messages could remain in the queue without being sent.
             </summary>
-            <param name="Connectivity"></param>
+            <param name="Connectivity">Network connecttion status true or false</param>
         </member>
         <member name="P:EncryptedMessaging.Context.IsConnected">
             <summary>
@@ -521,11 +870,144 @@
             The main thread must be used whenever the user interface needs to be updated, for example, any operation on an ObservableCollection that changes elements must be done by the main thread,  otherwise rendering on the graphical interface will generate an error.
             </summary>
         </member>
+        <member name="F:EncryptedMessaging.Context.CloudManager">
+            <summary>
+            Set up a cloud during context initialization if you want to use cloud features to save avatarms, contacts and other data
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.CryptoServiceProvider">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.#ctor(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="key"></param>
+        </member>
         <member name="M:EncryptedMessaging.CryptoServiceProvider.#ctor(System.String)">
             <summary>
             Instance the object
             </summary>
             <param name="passphrase">Passphrase or private key base 64</param>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.GetPrivateKeyBase58">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.VerifyHash(System.Byte[],System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="hash256"></param>
+            <param name="signature"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.SignHash(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="hash256"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.ExportCspBlob(System.Boolean)">
+            <summary>
+            
+            </summary>
+            <param name="includePrivateKey"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.GetPassphrase">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.ImportCspBlob(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="key"></param>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.Encrypt(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.Decrypt(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="encryptedData"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.IsValid">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.CryptoServiceProvider.ComputeHash(System.Byte[])">
+            <summary>
+            
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="T:EncryptedMessaging.Functions">
+            <summary>
+            
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.Encrypt(System.Byte[],System.Byte[])">
+            <summary>
+            encrypt the user input for the password.
+            </summary>
+            <param name="input">user input</param>
+            <param name="password">Byte array</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.Decrypt(System.Byte[],System.Byte[])">
+            <summary>
+            Decrypt the password
+            </summary>
+            <param name="input">User input</param>
+            <param name="password">Byte array</param>
+            <returns></returns>
+        </member>
+        <member name="T:EncryptedMessaging.Functions.ByteListComparer">
+            <summary>
+            Compare the two byte list and return the result.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.ByteListComparer.Compare(System.Collections.Generic.IList{System.Byte},System.Collections.Generic.IList{System.Byte})">
+            <summary>
+            
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.DateToRelative(System.DateTime)">
+            <summary>
+            Set the date to relative  if same return null.
+            </summary>
+            <param name="date">Instant in time</param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.SplitDataWithZeroEnd(System.Byte[],System.Int32,System.Int32@)">
+            <summary>
+            split the data and create new.
+            </summary>
+            <param name="data">Combined packages</param>
+            <param name="offset">The offset where to start</param>
+            <param name="pointer"></param>
+            <returns></returns>
         </member>
         <member name="M:EncryptedMessaging.Functions.SplitData(System.Byte[],System.Boolean,System.Int32)">
             <summary>
@@ -544,6 +1026,20 @@
             <param name="values">packages to join</param>
             <returns></returns>
         </member>
+        <member name="M:EncryptedMessaging.Functions.PassphraseValidation(System.String)">
+            <summary>
+            Vaidate the passphrase, if wrong return false.
+            </summary>
+            <param name="passphrase"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.FirstUpper(System.String)">
+            <summary>
+            Converts the value of a specified Unicode character to its uppercase equivalent using specified culture-specific formatting information.
+            </summary>
+            <param name="text"></param>
+            <returns> The uppercase equivalent of c, modified according to culture, or the unchanged value of c if c is already uppercase, has no uppercase equivalent, or is notalphabetic.</returns>
+        </member>
         <member name="M:EncryptedMessaging.Functions.SplitIncomingData(System.Byte[],System.Boolean)">
             <summary>
             Split arrays of incoming data
@@ -551,6 +1047,69 @@
             <param name="data">Array of data to split</param>
             <param name="smallValue">If true, the format supports values no larger than 256 bytes</param>
             <returns>Key value collection</returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.ToHex(System.Byte[])">
+            <summary>
+            Convert byte array to its equivalent string representation that is encoded with uppercase hex characters.
+            </summary>
+            <param name="ba"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.HexToBytes(System.String)">
+            <summary>
+            Convert hex character to its equivalent byte array.
+            </summary>
+            <param name="hex"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.ToBase64Url(System.Byte[])">
+            <summary>
+            Convert byte array to base 64 url.
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.FromBase64Url(System.String)">
+            <summary>
+            Convert from base 64 url to byte array
+            </summary>
+            <param name="text"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.BitesToFirebaseToken(System.Byte[])">
+            <summary>
+            Convert byte to firebase token
+            </summary>
+            <param name="bytes"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Functions.FirebaseTokenToBytes(System.String)">
+            <summary>
+            Convert firebase token to byte array.
+            </summary>
+            <param name="token"></param>
+            <returns></returns>
+        </member>
+        <member name="T:EncryptedMessaging.Message">
+             <summary>
+            Here are all the functions necessary to process messages in binary format, create messages and read them.
+             </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Message.#ctor(EncryptedMessaging.Context,EncryptedMessaging.Contact,EncryptedMessaging.MessageFormat.MessageType,System.Byte[],System.DateTime,System.Byte[],System.DateTime,System.UInt64,System.Boolean,System.UInt64,System.UInt64)">
+            <summary>
+            Message properties.
+            </summary>
+            <param name="context">Context</param>
+            <param name="contact">Recipent</param>
+            <param name="type">Type</param>
+            <param name="author">Sender</param>
+            <param name="creation">Date/time of sending</param>
+            <param name="data">Byte array</param>
+            <param name="receptionTime">Date/time of delivery</param>
+            <param name="postId">Unsigned long integer</param>
+            <param name="encrypted">Boolean</param>
+            <param name="chatId">Unsigned long integer</param>
+            <param name="authorId">Unsigned long integer</param>
         </member>
         <member name="P:EncryptedMessaging.Message.Contact">
             <summary>
@@ -661,6 +1220,22 @@
             <summary>
             Indicates whether this message was forwarded with encryption
             </summary>
+        </member>
+        <member name="P:EncryptedMessaging.Message.Translation">
+            <summary>
+            Translation set for the chat with the recipent.
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.MessageFormat">
+            <summary>
+            Message settings set for the recpients.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.MessageFormat.#ctor(EncryptedMessaging.Context)">
+            <summary>
+            Set context for the message format.
+            </summary>
+            <param name="context"></param>
         </member>
         <member name="T:EncryptedMessaging.MessageFormat.MessageType">
             <summary>
@@ -785,12 +1360,28 @@
             <param name="replyToPostId">The post Id property of the message you want to reply to</param>
             <returns>Data post</returns>
         </member>
+        <member name="T:EncryptedMessaging.Messaging">
+            <summary>
+            This class contains all the functions related to the messaging functionality for the users.
+            </summary>
+        </member>
         <member name="M:EncryptedMessaging.Messaging.#ctor(EncryptedMessaging.Context,System.Boolean)">
             <summary>
             Class initializer (prepares for use)
             </summary>
             <param name="context">Context</param>
             <param name="multipleChatModes">If false, one messaging chat will be handled at a time</param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SetMultipleChatModes(System.Boolean)">
+            <summary>
+            By default set to false, as only one messaging chat is handled.
+            </summary>
+            <param name="value">Boolean</param>
+        </member>
+        <member name="P:EncryptedMessaging.Messaging.CurrentChatRoom">
+            <summary>
+            Get the current chat group and set the time of last viewed and if message read.
+            </summary>
         </member>
         <member name="M:EncryptedMessaging.Messaging.ShowPost(System.Byte[],System.UInt64,System.DateTime,System.Action{EncryptedMessaging.Message,System.Boolean})">
             <summary>
@@ -998,6 +1589,12 @@
             </summary>
             <param name="toContact">The recipient</param>
         </member>
+        <member name="M:EncryptedMessaging.Messaging.SendContactStatus(EncryptedMessaging.Contact)">
+            <summary>
+            
+            </summary>
+            <param name="toContact"></param>
+        </member>
         <member name="M:EncryptedMessaging.Messaging.SendLastReading(EncryptedMessaging.Contact)">
             <summary>
             Send last reading
@@ -1018,6 +1615,34 @@
             <param name="audio">audio call</param>
             <param name="toContact">The recipient</param>
         </member>
+        <member name="M:EncryptedMessaging.Messaging.SendStartAudioGroupCall(System.Byte[],EncryptedMessaging.Contact)">
+            <summary>
+            Start a group audio call for the chat room.
+            </summary>
+            <param name="call">Audio call</param>
+            <param name="toContact">The recipients</param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SendStartVideoGroupCall(System.Byte[],EncryptedMessaging.Contact)">
+            <summary>
+            Start a group video call for the chat room.
+            </summary>
+            <param name="call">Video call</param>
+            <param name="toContact">The recipients</param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SendEndCall(System.Byte[],EncryptedMessaging.Contact)">
+            <summary>
+             End a group call for the chat room.
+            </summary>
+            <param name="call">Audio/Video call</param>
+            <param name="toContact">The recipient</param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SendDeclinedCall(System.Byte[],EncryptedMessaging.Contact)">
+            <summary>
+            Decline a call from the recipent.
+            </summary>
+            <param name="call"></param>
+            <param name="toContact"></param>
+        </member>
         <member name="M:EncryptedMessaging.Messaging.SendLocation(System.Double,System.Double,EncryptedMessaging.Contact,System.Nullable{System.UInt64})">
             <summary>
             Submit a geographic location
@@ -1025,6 +1650,22 @@
             <param name="latitude"></param>
             <param name="longitude"></param>
             <param name="toContact"></param>
+            <param name="replyToPostId"></param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SendPdfDocument(System.Byte[],EncryptedMessaging.Contact,System.Nullable{System.UInt64})">
+            <summary>
+            Send a document of the format pdf.
+            </summary>
+            <param name="document">file to send</param>
+            <param name="toContact">The recipient</param>
+            <param name="replyToPostId"></param>
+        </member>
+        <member name="M:EncryptedMessaging.Messaging.SendPhoneContact(System.Byte[],EncryptedMessaging.Contact,System.Nullable{System.UInt64})">
+            <summary>
+            Send a contact card to the recipent 
+            </summary>
+            <param name="phoneContact">Contact card</param>
+            <param name="toContact"> The recipient</param>
             <param name="replyToPostId"></param>
         </member>
         <member name="M:EncryptedMessaging.Messaging.SendCommandToSubApplication(EncryptedMessaging.Contact,System.UInt16,System.UInt16,System.Boolean,System.Boolean,System.Byte[][])">
@@ -1075,6 +1716,11 @@
             </summary>
             <returns></returns>
         </member>
+        <member name="P:EncryptedMessaging.My.IsServer">
+            <summary>
+            Boolean set for the Server parameter.
+            </summary>
+        </member>
         <member name="M:EncryptedMessaging.My.GetPublicKey">
             <summary>
             Return the public key of current user in base64 format
@@ -1084,6 +1730,18 @@
         <member name="M:EncryptedMessaging.My.GetPublicKeyBinary">
             <summary>
             Return the public key of current user in binary format (array of byte)
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.My.GetPrivatKeyBinary">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.My.GetId">
+            <summary>
+            Get the unisgned long integer User Id from the CSP byte array.
             </summary>
             <returns></returns>
         </member>
@@ -1147,6 +1805,27 @@
             <summary>
             Update my data held to my contacts when necessary.
             When my device id or firebase id change (for non-application dependent events), an update is sent to my contacts so they can continue to notify me when they send me communications and messages
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.ProcessResponsesFromCloud">
+            <summary>
+            Process handlling and generating outpusts based on the conditional functions implemented.
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.Repository">
+            <summary>
+            This library provides functions to retrieve messages on the server and store them locally.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Repository.#ctor(EncryptedMessaging.Context)">
+            <summary>
+            Display libraries used as read only.
+            </summary>
+            <param name="context"></param>
+        </member>
+        <member name="F:EncryptedMessaging.Repository.MaxPostLength">
+            <summary>
+            Set maximum post length to 20 MB.
             </summary>
         </member>
         <member name="M:EncryptedMessaging.Repository.AddPost(System.Byte[],System.UInt64,System.DateTime@)">
@@ -1217,7 +1896,7 @@
         </member>
         <member name="M:EncryptedMessaging.Repository.DeletePostByPostId(System.UInt64,EncryptedMessaging.Contact)">
             <summary>
-            
+            Delete a post given its Post Id.
             </summary>
             <param name="postId">Delete a post given its identifier</param>
             <param name="contact">The chat in which to search for the post, identified by the contact</param>
@@ -1227,6 +1906,27 @@
             Erase all content in a chat
             </summary>
             <param name="contact">The contact representing the chat you want to reset</param>
+        </member>
+        <member name="M:EncryptedMessaging.Repository.GetDateTimeOfData(System.Byte[])">
+            <summary>
+            Get the Date and time of the data from the byte array.
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Repository.GetTimestampOfData(System.Byte[])">
+            <summary>
+            Get time stamp from the byte array.
+            </summary>
+            <param name="data"></param>
+            <returns></returns>
+        </member>
+        <member name="M:EncryptedMessaging.Repository.PostId(System.Byte[])">
+            <summary>
+            Convert the  byte array to Unsigned 64 integer if length is satsifed by the condition.
+            </summary>
+            <param name="dataPost"></param>
+            <returns></returns>
         </member>
         <member name="T:EncryptedMessaging.Resources.Dictionary_de">
             <summary>
@@ -2548,6 +3248,17 @@
               Looks up a localized string similar to Passphrase errata.
             </summary>
         </member>
+        <member name="T:EncryptedMessaging.Setting">
+            <summary>
+            Configuration functions of setting message saving and deleting based on user input.
+            </summary>
+        </member>
+        <member name="M:EncryptedMessaging.Setting.#ctor(EncryptedMessaging.Context)">
+            <summary>
+            Load the settigs of the chats.
+            </summary>
+            <param name="context">Context</param>
+        </member>
         <member name="P:EncryptedMessaging.Setting.PostPersistenceDays">
             <summary>
             Number of days messages must be kept in memory before being automatically deleted
@@ -2561,6 +3272,16 @@
         <member name="P:EncryptedMessaging.Setting.MessagePagination">
             <summary>
             Number of messages for each chat page: The chat is divided into pages to speed up the loading and not to weigh down the memory
+            </summary>
+        </member>
+        <member name="T:EncryptedMessaging.Time">
+            <summary>
+            This class deals with time configuration related to the timestamps and sending and delivery of messages.
+            </summary>
+        </member>
+        <member name="P:EncryptedMessaging.Time.CurrentTimeGMT">
+            <summary>
+            Set current time based on system timezone.
             </summary>
         </member>
     </members>

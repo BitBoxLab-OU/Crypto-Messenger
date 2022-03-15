@@ -66,6 +66,9 @@
     <None Remove="Properties\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Cloud.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\SecureStorageGit\SecureStorage\SecureStorage.csproj" />
     <ProjectReference Include="..\CommunicationChannel\CommunicationChannel.csproj" />
   </ItemGroup>

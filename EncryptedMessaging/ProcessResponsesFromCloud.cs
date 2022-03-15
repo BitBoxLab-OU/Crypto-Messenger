@@ -2,6 +2,9 @@
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// Process handlling and generating outpusts based on the conditional functions implemented.
+	/// </summary>
 	static class ProcessResponsesFromCloud
 	{
 		internal static void OnResponse(Context context, string objectName, string key, byte[] data)

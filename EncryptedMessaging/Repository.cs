@@ -14,12 +14,22 @@ Use the NetworkManager library for data transmission.
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// This library provides functions to retrieve messages on the server and store them locally.
+    /// </summary>
     public class Repository
     {
         internal Dictionary<DateTime, ulong> ReceptionToPostId = new Dictionary<DateTime, ulong>();
 
+        /// <summary>
+        /// Display libraries used as read only.
+        /// </summary>
+        /// <param name="context"></param>
         public Repository(Context context) => _context = context;
         private readonly Context _context;
+        /// <summary>
+        /// Set maximum post length to 20 MB.
+        /// </summary>
         public const int MaxPostLength = 20971520; //20 MegaByte
         private string ChatPath(ulong chatId) => MapPath(Path.Combine(_context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), _context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
 
@@ -257,7 +267,7 @@ namespace EncryptedMessaging
                 DeletePostByPostId(postId, contact);
         }
         /// <summary>
-        /// 
+        /// Delete a post given its Post Id.
         /// </summary>
         /// <param name="postId">Delete a post given its identifier</param>
         /// <param name="contact">The chat in which to search for the post, identified by the contact</param>
@@ -309,8 +319,18 @@ namespace EncryptedMessaging
             return Path.Combine(path, pathNameFile);
         }
 
+        /// <summary>
+        /// Get the Date and time of the data from the byte array.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static DateTime GetDateTimeOfData(byte[] data) => Converter.FromUnixTimestamp(GetTimestampOfData(data));
 
+        /// <summary>
+        /// Get time stamp from the byte array.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
         public static int GetTimestampOfData(byte[] data)
         {
 #if DEBUG || DEBUG_A || DEBUG_B
@@ -322,6 +342,12 @@ namespace EncryptedMessaging
 #endif
             return Converter.BytesToInt(data.Skip(1).Take(4).ToArray());
         }
+
+        /// <summary>
+        /// Convert the  byte array to Unsigned 64 integer if length is satsifed by the condition.
+        /// </summary>
+        /// <param name="dataPost"></param>
+        /// <returns></returns>
         public static ulong PostId(byte[] dataPost)
         {
             var p1 = dataPost.Length < 8

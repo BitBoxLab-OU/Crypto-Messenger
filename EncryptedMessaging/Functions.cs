@@ -9,9 +9,18 @@ using System.IO;
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public static class Functions
 	{
 
+		/// <summary>
+		/// encrypt the user input for the password.
+		/// </summary>
+		/// <param name="input">user input</param>
+		/// <param name="password">Byte array</param>
+		/// <returns></returns>
 		public static byte[] Encrypt(byte[] input, byte[] password)
 		{
 			var pdb = new PasswordDeriveBytes(password, new byte[] { 0x43, 0x87, 0x23, 0x72 });
@@ -25,6 +34,13 @@ namespace EncryptedMessaging
 			cs.Close();
 			return ms.ToArray();
 		}
+
+		/// <summary>
+		/// Decrypt the password
+		/// </summary>
+		/// <param name="input">User input</param>
+		/// <param name="password">Byte array</param>
+		/// <returns></returns>
 		public static byte[] Decrypt(byte[] input, byte[] password)
 		{
 			var pdb = new PasswordDeriveBytes(password, new byte[] { 0x43, 0x87, 0x23, 0x72 });
@@ -39,8 +55,17 @@ namespace EncryptedMessaging
 			return ms.ToArray();
 		}
 
+		/// <summary>
+		/// Compare the two byte list and return the result.
+		/// </summary>
 		public class ByteListComparer : IComparer<IList<byte>>
 		{
+			/// <summary>
+			/// 
+			/// </summary>
+			/// <param name="x"></param>
+			/// <param name="y"></param>
+			/// <returns></returns>
 			public int Compare(IList<byte> x, IList<byte> y)
 			{
 				for (var index = 0; index < Math.Min(x.Count, y.Count); index++)
@@ -52,6 +77,11 @@ namespace EncryptedMessaging
 			}
 		}
 
+		/// <summary>
+		/// Set the date to relative  if same return null.
+		/// </summary>
+		/// <param name="date">Instant in time</param>
+		/// <returns></returns>
 		public static string DateToRelative(DateTime date)
 		{
 			if (date == DateTime.MinValue)
@@ -65,6 +95,13 @@ namespace EncryptedMessaging
 					 : distance.TotalMinutes >= 0 ? Dictionary.JustNow : null;
 		}
 
+		/// <summary>
+		/// split the data and create new.
+		/// </summary>
+		/// <param name="data">Combined packages</param>
+		/// <param name="offset">The offset where to start</param>
+		/// <param name="pointer"></param>
+		/// <returns></returns>
 		public static List<byte[]> SplitDataWithZeroEnd(byte[] data, int offset, out int pointer)
 		{
 			var datas = new List<byte[]>();
@@ -144,6 +181,11 @@ namespace EncryptedMessaging
 			return data;
 		}
 
+		/// <summary>
+		/// Vaidate the passphrase, if wrong return false.
+		/// </summary>
+		/// <param name="passphrase"></param>
+		/// <returns></returns>
 		public static bool PassphraseValidation(string passphrase)
 		{
 			try
@@ -168,6 +210,11 @@ namespace EncryptedMessaging
 
 		}
 
+		/// <summary>
+		/// Converts the value of a specified Unicode character to its uppercase equivalent using specified culture-specific formatting information.
+		/// </summary>
+		/// <param name="text"></param>
+		/// <returns> The uppercase equivalent of c, modified according to culture, or the unchanged value of c if c is already uppercase, has no uppercase equivalent, or is notalphabetic.</returns>
 		public static string FirstUpper(string text)
 		{
 			var value = "";
@@ -219,6 +266,11 @@ namespace EncryptedMessaging
 			return keyValue;
 		}
 
+		/// <summary>
+		/// Convert byte array to its equivalent string representation that is encoded with uppercase hex characters.
+		/// </summary>
+		/// <param name="ba"></param>
+		/// <returns></returns>
 		public static string ToHex(this byte[] ba)
 		{
 			var hex = new StringBuilder(ba.Length * 2);
@@ -227,6 +279,11 @@ namespace EncryptedMessaging
 			return hex.ToString();
 		}
 
+		/// <summary>
+		/// Convert hex character to its equivalent byte array.
+		/// </summary>
+		/// <param name="hex"></param>
+		/// <returns></returns>
 		public static byte[] HexToBytes(this string hex)
 		{
 			var NumberChars = hex.Length;
@@ -236,12 +293,22 @@ namespace EncryptedMessaging
 			return bytes;
 		}
 
+		/// <summary>
+		/// Convert byte array to base 64 url.
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
 		public static string ToBase64Url(this byte[] bytes)
 		{
 			var returnValue = Convert.ToBase64String(bytes).TrimEnd(padding).Replace('+', '-').Replace('/', '_');
 			return returnValue;
 		}
 
+		/// <summary>
+		/// Convert from base 64 url to byte array
+		/// </summary>
+		/// <param name="text"></param>
+		/// <returns></returns>
 		public static byte[] FromBase64Url(this string text)
 		{
 			var incoming = text.Replace('_', '/').Replace('-', '+');
@@ -257,7 +324,11 @@ namespace EncryptedMessaging
 
 		private static readonly char[] padding = { '=' };
 
-
+		/// <summary>
+		/// Convert byte to firebase token
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <returns></returns>
 		public static string BitesToFirebaseToken(byte[] bytes)
 		{
 			var array1 = new byte[bytes.Length - 105];
@@ -271,6 +342,11 @@ namespace EncryptedMessaging
 			return result;
 		}
 
+		/// <summary>
+		/// Convert firebase token to byte array.
+		/// </summary>
+		/// <param name="token"></param>
+		/// <returns></returns>
 		public static byte[] FirebaseTokenToBytes(string token)
 		{
 			var parts = token.Split(':');

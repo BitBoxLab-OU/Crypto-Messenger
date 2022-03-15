@@ -5,12 +5,12 @@ using System.IO.IsolatedStorage;
 namespace CommunicationChannel
 {
 	/// <summary>
-	/// 
+	/// In TCP connections, theoretically the connection could drop while the packet transmission is in progress, or the bidirectional connection could be interrupted by the system in one direction only: In iOS it happens that when the app is in the background the outgoing communication is interrupted while the incoming one remains active, and the device cannot confirm that it has received the packets, so that the server, having no acknowledgment of receipt, resends the packets that have actually already been received.
 	/// </summary>
 	public class AntiDuplicate
 	{
 		/// <summary>
-		/// 
+		/// Constructor of class
 		/// </summary>
 		public AntiDuplicate()
 		{
@@ -30,11 +30,11 @@ namespace CommunicationChannel
 					}
 		}
 		/// <summary>
-		///	
+		///	Check if the data has already been received
 		/// </summary>
-		/// <param name="data"></param>
-		/// <returns></returns>
-		public bool AlreadyReceived(byte[] data)
+		/// <param name="data">Data packet</param>
+		/// <returns>True or False</returns>
+		internal bool AlreadyReceived(byte[] data)
 		{
 			var alreadyReceived = false;
 			var hash = Utility.FastHash(data);

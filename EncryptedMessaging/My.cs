@@ -86,6 +86,9 @@ namespace EncryptedMessaging
 
         private CryptoServiceProvider _csp = null;
 
+        /// <summary>
+        /// Boolean set for the Server parameter.
+        /// </summary>
         public bool IsServer => Context.IsServer;
 
         /// <summary>
@@ -99,8 +102,17 @@ namespace EncryptedMessaging
         /// </summary>
         /// <returns></returns>
         public byte[] GetPublicKeyBinary() => Csp.ExportCspBlob(false);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public byte[] GetPrivatKeyBinary() => Csp.ExportCspBlob(true);
 
+        /// <summary>
+        /// Get the unisgned long integer User Id from the CSP byte array.
+        /// </summary>
+        /// <returns></returns>
         public ulong GetId() => ContactConverter.GetUserId(Csp.ExportCspBlob(false));
 
         private string _name;
@@ -253,7 +265,7 @@ namespace EncryptedMessaging
         {
             Context.SecureStorage.DataStorage.SaveData(png, "avatar");
             var encryptedPng = Functions.Encrypt(png, GetPublicKeyBinary()); // The avatar is public but is encrypted using the contact's public key as a password, in this way it can only be decrypted by users who have this contact in the address book
-            Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);
+            Context.CloudManager?.SaveDataOnCloud("Avatar", GetId().ToString(), encryptedPng, true); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
             Context.Contacts.ForEachContact(contact =>
             {
                 if ((DateTime.Now.ToLocalTime() - contact.LastMessageTime).TotalDays < 30) // To avoid creating too much traffic on the network, the information on the avatar update is sent only to those who have sent us messages in the last 30 days
@@ -272,8 +284,8 @@ namespace EncryptedMessaging
             // to limit the Spam in cloud the contact can be backup when you add the first contact
             if (Context.Contacts.ContactsList.Count >= AntispamCloud)
             {
-                if (_name != null)
-                    Cloud.SendCloudCommands.PostObject(Context, "String", "MyName", SecureStorage.Cryptography.Encrypt(System.Text.Encoding.Unicode.GetBytes(_name), Csp.ExportCspBlob(true))); // Saving the name to the cloud will allow me to get it back when I recover the account with the passphrase
+                if (_name != null) // Saving the name to the cloud will allow me to get it back when I recover the account with the passphrase
+                    Context.CloudManager?.SaveDataOnCloud("String", "MyName", SecureStorage.Cryptography.Encrypt(System.Text.Encoding.Unicode.GetBytes(_name), Csp.ExportCspBlob(true)));  //Cloud.SendCloudCommands.PostObject(Context, "String", "MyName", SecureStorage.Cryptography.Encrypt(System.Text.Encoding.Unicode.GetBytes(_name), Csp.ExportCspBlob(true))); 
                 //Cloud.SendCloudCommands.PostBackupUser(Context, Csp.ExportCspBlob(false), Name, FirebaseToken, DeviceToken);
             }
         }

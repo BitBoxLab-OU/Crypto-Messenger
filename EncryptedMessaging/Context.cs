@@ -41,7 +41,7 @@ namespace EncryptedMessaging
             if (cloudPath != null && !isServer)
                 System.Diagnostics.Debugger.Break(); // Set up cloud path functions for server applications only
 #endif
-            Cloud.ReceiveCloudCommands.SetCustomPath(cloudPath, isServer);
+            //Cloud.ReceiveCloudCommands.SetCustomPath(cloudPath, isServer);
             EntryPoint = new UriBuilder(entryPoint).Uri;
             Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined;
 
@@ -151,9 +151,9 @@ namespace EncryptedMessaging
         /// <summary>
         /// Delegate for the event that notifies when messages are sent
         /// </summary>
-        /// <param name="contact"></param>
-        /// <param name="deliveredTime"></param>
-        /// <param name="isMy"></param>
+        /// <param name="contact">Contact (group or single user)</param>
+        /// <param name="deliveredTime">When message was delivered.</param>
+        /// <param name="isMy">Boolean</param>
         public delegate void MessageDeliveredEvent(Contact contact, DateTime deliveredTime, bool isMy);
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace EncryptedMessaging
         /// thread-safe calls
         /// https://docs.microsoft.com/en-us/dotnet/desktop/winforms/controls/how-to-make-thread-safe-calls?view=netdesktop-6.0
         /// </summary>
-        /// <param name="action"></param>
+        /// <param name="action">trigger event</param>
         private void ThreadSafeCalls(Action action)
         {
             var threadParameters = new ThreadStart(delegate { action.Invoke(); });
@@ -251,7 +251,7 @@ namespace EncryptedMessaging
         /// Function that must be called whenever the host system has a change of state on the connection. This parameter must be set when starting the application.
         /// If it is not set, the libraries do not know if there are changes in the state of the internet connection, and the messages could remain in the queue without being sent.
         /// </summary>
-        /// <param name="Connectivity"></param>
+        /// <param name="Connectivity">Network connecttion status true or false</param>
         public static void OnConnectivityChange(bool Connectivity)
         {
             _internetAccess = Connectivity;
@@ -299,5 +299,10 @@ namespace EncryptedMessaging
         /// The main thread must be used whenever the user interface needs to be updated, for example, any operation on an ObservableCollection that changes elements must be done by the main thread,  otherwise rendering on the graphical interface will generate an error.
         /// </summary>
         public readonly Action<Action> InvokeOnMainThread;
+
+        /// <summary>
+        /// Set up a cloud during context initialization if you want to use cloud features to save avatarms, contacts and other data
+        /// </summary>
+        public ICloudManager CloudManager;
     }
 }

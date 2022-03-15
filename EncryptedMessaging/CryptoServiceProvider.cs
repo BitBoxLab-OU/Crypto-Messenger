@@ -1,12 +1,20 @@
-﻿using NBitcoin;
-using System;
+﻿//using System;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using NBitcoin;
+//using static NBitcoin.BitcoinSerializableExtensions;
 
 namespace EncryptedMessaging
 {
-	public class CryptoServiceProvider : IDisposable
+	/// <summary>
+	/// This class handles the encryption and decryption of the passphrases and validations.
+	/// </summary>
+	public class CryptoServiceProvider : System.IDisposable
 	{
+		/// <summary>
+		/// The ImportCspBlob method initializes the key data of an AsymmetricAlgorithm object using a blob that is compatible with the unmanaged Microsoft Cryptographic API (CAPI).
+		/// </summary>
+		/// <param name="key"></param>
 		public CryptoServiceProvider(byte[] key = null)
 		{
 			ImportCspBlob(key);
@@ -34,20 +42,30 @@ namespace EncryptedMessaging
 				}
 				else if (words.Length == 1)
 				{
-					ImportCspBlob(Convert.FromBase64String(passphrase));
+					ImportCspBlob(System.Convert.FromBase64String(passphrase));
 				}
 			}
-			catch (Exception)
+			catch (System.Exception)
 			{
 				Debugger.Break(); // passphrase wrong
 			}
 		}
 
+		/// <summary>
+		/// Gets the private key through wallet import format. 
+		/// </summary>
+		/// <returns></returns>
 		public string GetPrivateKeyBase58()
 		{
 			return _privateKey.GetBitcoinSecret(Network.Main).ToString();
 		}
 
+		/// <summary>
+		/// Verifies that a digital signature is valid by determining the hash value in the signature using the specified hash algorithm and padding, and comparing it to the provided hash value.
+		/// </summary>
+		/// <param name="hash256">The hash value of the signed data.</param>
+		/// <param name="signature">The signature data to be verified.</param>
+		/// <returns></returns>
 		public bool VerifyHash(byte[] hash256, byte[] signature)
 		{
 			try
@@ -55,12 +73,17 @@ namespace EncryptedMessaging
 				var sign = new NBitcoin.Crypto.ECDSASignature(signature);
 				return _pubKey.Verify(new uint256(hash256), sign);
 			}
-			catch (Exception)
+			catch (System.Exception)
 			{
 				return false;
 			}
 		}
 
+		/// <summary>
+		/// Generates a digital signature for the specified hash value.
+		/// </summary>
+		/// <param name="hash256">The hash value of the data that is being signed.</param>
+		/// <returns></returns>
 		public byte[] SignHash(byte[] hash256)
 		{
 			var sign = _privateKey.Sign(new uint256(hash256));
@@ -74,16 +97,33 @@ namespace EncryptedMessaging
 		//	_pubKey = _privateKey.PubKey;
 		//}
 
-		public byte[] ExportCspBlob(bool includePrivateKey) => _privateKey != null ? includePrivateKey ? _privateKey.ToBytes() : _privateKey.PubKey.ToBytes() : (_pubKey?.ToBytes());
+		/// <summary>
+		/// Exports a blob that contains the key information associated with an AsymmetricAlgorithm privatekey.
+		/// </summary>
+		/// <param name="includePrivateKey"></param>
+		/// <returns></returns>
+		public byte[] ExportCspBlob(bool includePrivateKey)
+        {
+			return _privateKey != null ? includePrivateKey ? _privateKey.ToBytes() : _privateKey.PubKey.ToBytes() : _pubKey?.ToBytes();
+        }
+
+		/// <summary>
+		/// Get the passPhrase property, If the string is empty return null.
+		/// </summary>
+		/// <returns></returns>
 		public string GetPassphrase()
 		{
 			if (_mnemo != null)
 				return _mnemo.ToString();
 			else if (_privateKey != null)
-				return Convert.ToBase64String(_privateKey.ToBytes());
+				return System.Convert.ToBase64String(_privateKey.ToBytes());
 			return null;
 		}
 
+		/// <summary>
+		/// The ImportCspBlob method initializes the key data of an AsymmetricAlgorithm object using a blob that is compatible with the unmanaged Microsoft Cryptographic API (CAPI).
+		/// </summary>
+		/// <param name="key">A byte array that represents an asymmetric key blob.</param>
 		public void ImportCspBlob(byte[] key)
 		{
 			_privateKey = null;
@@ -109,8 +149,18 @@ namespace EncryptedMessaging
 			}
 		}
 
+		/// <summary>
+		/// Encrypts the private key. 
+		/// </summary>
+		/// <param name="data"></param>
+		/// <returns></returns>
 		public byte[] Encrypt(byte[] data) => _pubKey.Encrypt(data);
 
+		/// <summary>
+		/// Decrypts the private key. 
+		/// </summary>
+		/// <param name="encryptedData"></param>
+		/// <returns></returns>
 		public byte[] Decrypt(byte[] encryptedData) => _privateKey.Decrypt(encryptedData);
 
 		private Mnemonic _mnemo;
@@ -118,6 +168,10 @@ namespace EncryptedMessaging
 		private Key _privateKey;
 		private PubKey _pubKey;
 
+		/// <summary>
+		/// Checks validity and returns boolean.
+		/// </summary>
+		/// <returns></returns>
 		public bool IsValid()
 		{
 			return _privateKey != null || _pubKey != null;
@@ -145,6 +199,11 @@ namespace EncryptedMessaging
 			_disposed = true;
 		}
 
+		/// <summary>
+		/// Computes the hash value for the specified byte array.
+		/// </summary>
+		/// <param name="data">Combined packages</param>
+		/// <returns>Byte array</returns>
 		public static byte[] ComputeHash(byte[] data) => NBitcoin.Crypto.Hashes.DoubleSHA256(data).ToBytes();
 
 	}

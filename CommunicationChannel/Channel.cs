@@ -7,7 +7,7 @@ using System.Threading;
 namespace CommunicationChannel
 {
     /// <summary>
-    /// 
+    /// This class handle all the communication channel operation with server-side.
     /// </summary>
     public class Channel
     {
@@ -44,7 +44,7 @@ namespace CommunicationChannel
         internal Spooler Spooler;
         internal Tcp Tcp;
         /// <summary>
-        /// 
+        /// class object to use command at server-side.
         /// </summary>
         public CommandsForServer CommandsForServer;
         internal Action<uint> OnDataDeliveryConfirm; // uint parameter is dataId
@@ -63,19 +63,19 @@ namespace CommunicationChannel
             }
         }
        /// <summary>
-       /// 
+       /// checks the connection status.
        /// </summary>
-       /// <returns></returns>
+       /// <returns>True or False</returns>
         public bool IsConnected()
         {
             return Tcp.Client != null && Tcp.Client.Connected;
         }
         /// <summary>
-        /// 
+        /// server URL.
         /// </summary>
         public readonly Uri ServerUri;
         /// <summary>
-        /// 
+        /// Server domain id.
         /// </summary>
         public readonly int Domain;
         internal void OnDataReceives(byte[] incomingData, out Tuple<Tcp.ErrorType, string> error, bool directlyWithoutSpooler)
@@ -138,21 +138,53 @@ namespace CommunicationChannel
             }
         }
 
-        private bool LogError = true; // Set this true if you want a ErrorLog
+        /// <summary>
+        /// Set this true if you want a ErrorLog
+        /// </summary>
+        public bool LogError = true; // Set this true if you want a ErrorLog
 
         //=========================== Data exposed for diagnostic use =====================================
-        private event Action<string> RefreshLogError;
+        /// <summary>
+        /// Action to refresh error log.
+        /// </summary>
+        public event Action<string> RefreshLogError;
         internal string StatusDescription; //is multi line text 
-        private bool ClientExists => Tcp.Client != null;
-        private bool ClientConnected => Tcp.Client != null && Tcp.Client.Connected;
-        private bool Logged => Tcp.Logged;
-        private int QueeCount => Spooler.QueeCount;
-        private int LastPostParts;
-        private int PostCounter;
-        private int DuplicatePost;
-        private string ErrorLog;
+       /// <summary>
+       /// TCP client exists
+       /// </summary>
+        public bool ClientExists => Tcp.Client != null;
+        /// <summary>
+        /// TCP client connection status 
+        /// </summary>
+        public bool ClientConnected => Tcp.Client != null && Tcp.Client.Connected;
+        /// <summary>
+        /// Client log in status
+        /// </summary>
+        public bool Logged => Tcp.Logged;
+
+        /// <summary>
+        /// Number of bytes in the queue
+        /// </summary>
+        public int QueeCount => Spooler.QueeCount;
         /// <summary>
         /// 
+        /// </summary>
+        public int LastPostParts;
+        /// <summary>
+        /// Number of posts
+        /// </summary>
+        public int PostCounter;
+        /// <summary>
+        /// Number of duplicate post
+        /// </summary>
+        public int DuplicatePost;
+
+        /// <summary>
+        ///  Display all the error logs
+        /// </summary>
+        public string ErrorLog;
+        /// <summary>
+        /// Number of failure connnection
         /// </summary>
         public ulong KeepAliveFailures { get; internal set; }
         //=================================================================================================
@@ -160,7 +192,7 @@ namespace CommunicationChannel
 
         private static bool _internetAccess;
         /// <summary>
-        /// 
+        /// Check internet access.
         /// </summary>
         public static bool InternetAccess
         {

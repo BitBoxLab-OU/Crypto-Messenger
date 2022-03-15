@@ -2,8 +2,15 @@
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// Configuration functions of setting message saving and deleting based on user input.
+    /// </summary>
     public class Setting
     {
+        /// <summary>
+        /// Load the settigs of the chats.
+        /// </summary>
+        /// <param name="context">Context</param>
         public Setting(Context context)
         {
             _context = context;

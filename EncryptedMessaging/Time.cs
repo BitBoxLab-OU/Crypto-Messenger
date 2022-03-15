@@ -9,6 +9,9 @@ using System.Text.RegularExpressions;
 
 namespace EncryptedMessaging
 {
+	/// <summary>
+	/// This class deals with time configuration related to the timestamps and sending and delivery of messages.
+	/// </summary>
 	public static class Time
 	{
 		private static readonly bool EnablePrecideDateTime = false;
@@ -16,6 +19,10 @@ namespace EncryptedMessaging
 		static bool _updated;
 		static TimeSpan _delta = new TimeSpan(long.MinValue);
 		static readonly object _lockObj = new object();
+
+		/// <summary>
+		/// Set current time based on system timezone.
+		/// </summary>
 		public static DateTime CurrentTimeGMT
 		{
 			get

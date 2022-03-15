@@ -8,13 +8,13 @@ namespace EncryptedMessaging.Cloud
 {
     /// <summary>
     /// This class contains commands that can be sent to the cloud server
-    /// </summary>b
+    /// </summary>
     public static class SendCloudCommands
     {
         /// <summary>
         /// Ask for contact
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="context">Context</param>
         public static void GetBackupUser(Context context)
         {
             var param1 = Tuple.Create((byte)Keys.CommandType, ((int)CommandType.Get).GetBytes());
@@ -329,6 +329,11 @@ namespace EncryptedMessaging.Cloud
         }
         public static Dictionary<Subject, Action<Message, Dictionary<byte, byte[]>>> OnPost = new Dictionary<Subject, Action<Message, Dictionary<byte, byte[]>>>();
         public static Dictionary<Subject, Action<Message, Dictionary<byte, byte[]>>> OnGet = new Dictionary<Subject, Action<Message, Dictionary<byte, byte[]>>>();
+       /// <summary>
+       /// Set a custom path to the account.
+       /// </summary>
+       /// <param name="customPath">String</param>
+       /// <param name="eraseNotUsedAccount">Boolean</param>
         public static void SetCustomPath(string customPath, bool eraseNotUsedAccount)
         {
             CustomPath = customPath;

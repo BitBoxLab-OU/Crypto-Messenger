@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace CommunicationChannel
 {
 	/// <summary>
-	/// 
+	/// This class handle the commands to be executed at the server level.
 	/// </summary>
 	public class CommandsForServer
 	{
@@ -40,6 +40,12 @@ namespace CommunicationChannel
 			return data;
 		}
 
+		/// <summary>
+		/// Send data to the server.
+		/// </summary>
+		/// <param name="chatId">chat to which data belong to</param>
+		/// <param name="dataToSend">data</param>
+		/// <param name="directlyWithoutSpooler"> if you want to send directly without spooler make it true else false </param>
 		public void SendPostToServer(ulong chatId, byte[] dataToSend, bool directlyWithoutSpooler = false) => SendCommandToServer(Protocol.Command.SetNewpost, dataToSend, chatId, directlyWithoutSpooler: directlyWithoutSpooler);
 
 		//public static void Connect(ulong myId)
@@ -48,9 +54,9 @@ namespace CommunicationChannel
 		//}
 
 		/// <summary>
-		/// 
+		/// Confirmation that data is recieved at the server side.
 		/// </summary>
-		/// <param name="dataReceived"></param>
+		/// <param name="dataReceived"> data to recieve confirmation </param>
 		public void DataReceivedConfirmation(byte[] dataReceived) => SendCommandToServer(Protocol.Command.DataReceivedConfirmation, Utility.DataIdBinary(dataReceived), directlyWithoutSpooler: true);
 
 	}

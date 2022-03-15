@@ -8,6 +8,9 @@ using static EncryptedMessaging.MessageFormat;
 
 namespace EncryptedMessaging
 {
+    /// <summary>
+    /// This class contains all the functions related to the messaging functionality for the users.
+    /// </summary>
     public class Messaging
     {
         /// <summary>
@@ -22,11 +25,20 @@ namespace EncryptedMessaging
         }
         internal Context Context;
         internal bool MultipleChatModes { get; private set; }
+
+        /// <summary>
+        /// By default set to false, as only one messaging chat is handled.
+        /// </summary>
+        /// <param name="value">Boolean</param>
         public void SetMultipleChatModes(bool value)
         {
             MultipleChatModes = value;
         }
         private Contact _currentChatRoom;
+
+        /// <summary>
+        /// Get the current chat group and set the time of last viewed and if message read.
+        /// </summary>
         public Contact CurrentChatRoom
         {
             get => _currentChatRoom;
@@ -115,10 +127,6 @@ namespace EncryptedMessaging
             if (message.Type == MessageType.Delete)
             {
                 Context.Repository.DeletePostByPostId(Converter.BytesToUlong(message.Data), chatId);
-            }
-            else if (message.Type == MessageType.SmallData || message.Type == MessageType.Data)
-            {
-                Cloud.ReceiveCloudCommands.OnCommand(Context, message);
             }
             else if (message.Type == MessageType.NameChange)
             {
@@ -528,6 +536,10 @@ namespace EncryptedMessaging
             SendMessage(MessageType.NameChange, data, toContact);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="toContact"></param>
         public void SendContactStatus(Contact toContact)
         {
             // bit 0 = is blocked - bit 1 to 31 undefined in this version
@@ -562,12 +574,32 @@ namespace EncryptedMessaging
         /// <param name="toContact">The recipient</param>
         public void SendVideoCall(byte[] call, Contact toContact) => SendMessage(MessageType.VideoCall, call, toContact);
 
+        /// <summary>
+        /// Start a group audio call for the chat room.
+        /// </summary>
+        /// <param name="call">Audio call</param>
+        /// <param name="toContact">The recipients</param>
         public void SendStartAudioGroupCall(byte[] call, Contact toContact) => SendMessage(MessageType.StartAudioGroupCall, call, toContact);
 
+        /// <summary>
+        /// Start a group video call for the chat room.
+        /// </summary>
+        /// <param name="call">Video call</param>
+        /// <param name="toContact">The recipients</param>
         public void SendStartVideoGroupCall(byte[] call, Contact toContact) => SendMessage(MessageType.StartAudioGroupCall, call, toContact);
 
+        /// <summary>
+        ///  End a group call for the chat room.
+        /// </summary>
+        /// <param name="call">Audio/Video call</param>
+        /// <param name="toContact">The recipient</param>
         public void SendEndCall(byte[] call, Contact toContact) => SendMessage(MessageType.EndCall, call, toContact);
 
+        /// <summary>
+        /// Decline a call from the recipent.
+        /// </summary>
+        /// <param name="call"></param>
+        /// <param name="toContact"></param>
         public void SendDeclinedCall(byte[] call, Contact toContact) => SendMessage(MessageType.DeclinedCall, call, toContact);
 
         /// <summary>
@@ -582,8 +614,20 @@ namespace EncryptedMessaging
             SendMessage(MessageType.Location, BitConverter.GetBytes(latitude).Combine(BitConverter.GetBytes(longitude)), toContact, replyToPostId);
         }
 
+        /// <summary>
+        /// Send a document of the format pdf.
+        /// </summary>
+        /// <param name="document">file to send</param>
+        /// <param name="toContact">The recipient</param>
+        /// <param name="replyToPostId"></param>
         public void SendPdfDocument(byte[] document, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.PdfDocument, document, toContact, replyToPostId);
 
+        /// <summary>
+        /// Send a contact card to the recipent 
+        /// </summary>
+        /// <param name="phoneContact">Contact card</param>
+        /// <param name="toContact"> The recipient</param>
+        /// <param name="replyToPostId"></param>
         public void SendPhoneContact(byte[] phoneContact, Contact toContact, ulong? replyToPostId = null) => SendMessage(MessageType.PhoneContact, phoneContact, toContact, replyToPostId);
 
         /// <summary>

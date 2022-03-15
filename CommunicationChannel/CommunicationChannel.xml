@@ -6,27 +6,27 @@
     <members>
         <member name="T:CommunicationChannel.AntiDuplicate">
             <summary>
-            
+            In TCP connections, theoretically the connection could drop while the packet transmission is in progress, or the bidirectional connection could be interrupted by the system in one direction only: In iOS it happens that when the app is in the background the outgoing communication is interrupted while the incoming one remains active, and the device cannot confirm that it has received the packets, so that the server, having no acknowledgment of receipt, resends the packets that have actually already been received.
             </summary>
         </member>
         <member name="M:CommunicationChannel.AntiDuplicate.#ctor">
             <summary>
-            
+            Constructor of class
             </summary>
         </member>
         <member name="M:CommunicationChannel.AntiDuplicate.AlreadyReceived(System.Byte[])">
             <summary>
-            
+            Check if the data has already been received
             </summary>
-            <param name="data"></param>
-            <returns></returns>
+            <param name="data">Data packet</param>
+            <returns>True or False</returns>
         </member>
-        <member name="T:CommunicationChannel.Channell">
+        <member name="T:CommunicationChannel.Channel">
             <summary>
-            
+            This class handle all the communication channel operation with server-side.
             </summary>
         </member>
-        <member name="M:CommunicationChannel.Channell.#ctor(System.String,System.Int32,System.Func{System.Boolean},System.Action{System.UInt64,System.Byte[]},System.Action{System.UInt32},System.UInt64,System.Int32)">
+        <member name="M:CommunicationChannel.Channel.#ctor(System.String,System.Int32,System.Func{System.Boolean},System.Action{System.UInt64,System.Byte[]},System.Action{System.UInt32},System.UInt64,System.Int32)">
             <summary>
             Initialize the library
             </summary>
@@ -38,176 +38,273 @@
             <param name="myId">The identifier of the current user. Since the server system is focused on anonymity and security, there is no user list, it is a cryptographic id generated with a hashing algorithm</param>
             <param name="connectionTimeout">Used to remove the connection when not in use. However, mobile systems remove the connection when the application is in the background so it makes no sense to try to keep the connection always open. This also lightens the number of simultaneous server-side connections.</param>
         </member>
-        <member name="F:CommunicationChannel.Channell.CommandsForServer">
+        <member name="F:CommunicationChannel.Channel.CommandsForServer">
             <summary>
-            
+            class object to use command at server-side.
             </summary>
         </member>
-        <member name="M:CommunicationChannel.Channell.ReEstablishConnection">
+        <member name="M:CommunicationChannel.Channel.ReEstablishConnection">
             <summary>
             Use this command to re-establish the connection if it is disabled by the timer set with the initialization
             </summary>
         </member>
-        <member name="M:CommunicationChannel.Channell.IsConnected">
+        <member name="M:CommunicationChannel.Channel.IsConnected">
+            <summary>
+            checks the connection status.
+            </summary>
+            <returns>True or False</returns>
+        </member>
+        <member name="F:CommunicationChannel.Channel.ServerUri">
+            <summary>
+            server URL.
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Channel.Domain">
+            <summary>
+            Server domain id.
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Channel.LogError">
+            <summary>
+            Set this true if you want a ErrorLog
+            </summary>
+        </member>
+        <member name="E:CommunicationChannel.Channel.RefreshLogError">
+            <summary>
+            Action to refresh error log.
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channel.ClientExists">
+            <summary>
+            TCP client exists
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channel.ClientConnected">
+            <summary>
+            TCP client connection status 
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channel.Logged">
+            <summary>
+            Client log in status
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channel.QueeCount">
+            <summary>
+            Number of bytes in the queue
+            </summary>
+        </member>
+        <member name="F:CommunicationChannel.Channel.LastPostParts">
             <summary>
             
             </summary>
-            <returns></returns>
         </member>
-        <member name="F:CommunicationChannel.Channell.ServerUri">
+        <member name="F:CommunicationChannel.Channel.PostCounter">
             <summary>
-            
+            Number of posts
             </summary>
         </member>
-        <member name="F:CommunicationChannel.Channell.Domain">
+        <member name="F:CommunicationChannel.Channel.DuplicatePost">
             <summary>
-            
+            Number of duplicate post
             </summary>
         </member>
-        <member name="P:CommunicationChannel.Channell.KeepAliveFailures">
+        <member name="F:CommunicationChannel.Channel.ErrorLog">
             <summary>
-            
+             Display all the error logs
             </summary>
         </member>
-        <member name="P:CommunicationChannel.Channell.InternetAccess">
+        <member name="P:CommunicationChannel.Channel.KeepAliveFailures">
             <summary>
-            
+            Number of failure connnection
+            </summary>
+        </member>
+        <member name="P:CommunicationChannel.Channel.InternetAccess">
+            <summary>
+            Check internet access.
             </summary>
         </member>
         <member name="T:CommunicationChannel.CommandsForServer">
             <summary>
-            
+            This class handle the commands to be executed at the server level.
             </summary>
+        </member>
+        <member name="M:CommunicationChannel.CommandsForServer.SendPostToServer(System.UInt64,System.Byte[],System.Boolean)">
+            <summary>
+            Send data to the server.
+            </summary>
+            <param name="chatId">chat to which data belong to</param>
+            <param name="dataToSend">data</param>
+            <param name="directlyWithoutSpooler"> if you want to send directly without spooler make it true else false </param>
         </member>
         <member name="M:CommunicationChannel.CommandsForServer.DataReceivedConfirmation(System.Byte[])">
             <summary>
-            
+            Confirmation that data is recieved at the server side.
             </summary>
-            <param name="dataReceived"></param>
+            <param name="dataReceived"> data to recieve confirmation </param>
         </member>
         <member name="T:CommunicationChannel.Converter">
             <summary>
-            
+            This class converts the data from one format to another as per the task requirement.
             </summary>
         </member>
         <member name="M:CommunicationChannel.Converter.ToUnixTimestamp(System.DateTime)">
             <summary>
-            
+            convert DateTime to unix timestamp
             </summary>
-            <param name="dateTime"></param>
-            <returns></returns>
+            <param name="dateTime">DateTime</param>
+            <returns>unix timestamp</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.FromUnixTimestamp(System.Int32)">
             <summary>
-            
+            convert unix timestamp to DateTime
             </summary>
-            <param name="timesatamp"></param>
-            <returns></returns>
+            <param name="timestamp">unix timestamp</param>
+            <returns>DateTime</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.FromUnixTimestamp(System.Byte[])">
+            <inheritdoc cref="M:CommunicationChannel.Converter.FromUnixTimestamp(System.Int32)"/>
+        </member>
+        <member name="M:CommunicationChannel.Converter.IpToUint(System.String)">
             <summary>
-            
+            convert IP address into unsigned int.
             </summary>
-            <param name="timesatamp4Bytes"></param>
-            <returns></returns>
+            <param name="ip">IP address</param>
+            <returns>IP as unsigned int</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.UintToIp(System.UInt32)">
+            <summary>
+            converts back unsigned int into IP address.
+            </summary>
+            <param name="ip">Converted IP address</param>
+            <returns>IP address</returns>
+        </member>
+        <member name="P:CommunicationChannel.Converter.Base36CharList">
+            <summary>
+            get Base36CharList
+            </summary>
         </member>
         <member name="M:CommunicationChannel.Converter.Base36Encode(System.UInt64)">
             <summary>
             Encode the given number into a Base36 string
             </summary>
-            <param name="input"></param>
-            <returns></returns>
+            <param name="input">number to convert</param>
+            <returns> Base36 Encoded string </returns>
         </member>
         <member name="M:CommunicationChannel.Converter.Base36Decode(System.String)">
             <summary>
             Decode the Base36 Encoded string into a number
             </summary>
-            <param name="input"></param>
-            <returns></returns>
+            <param name="input">Base36 Encoded string</param>
+            <returns>number</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.StringToBase64(System.String)">
+            <summary>
+            Convert the given string into a Base64 string
+            </summary>
+            <param name="text">text</param>
+            <returns> Base64 string</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.Base64ToString(System.String)">
+            <summary>
+            Convert the given Base64 string into a string
+            </summary>
+            <param name="text">Base64 string</param>
+            <returns>string</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.StringToByteArray(System.String)">
+            <summary>
+            Convert string to Byte array
+            </summary>
+            <param name="text">string</param>
+            <returns>byte array</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.ByteArrayToString(System.Byte[])">
+            <summary>
+            convert byte array to string
+            </summary>
+            <param name="bytes"> byte array </param>
+            <returns>string</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.XmlToObject(System.String,System.Type,System.Object@)">
+            <summary>
+            Convert XML to Object
+            </summary>
+            <param name="xml"> xml string</param>
+            <param name="type"> type of xml serializer</param>
+            <param name="obj">converted xml </param>
+            <returns>True or False</returns>
+        </member>
+        <member name="M:CommunicationChannel.Converter.ObjectToXml(System.Object)">
+            <summary>
+            Convert Object to XML
+            </summary>
+            <param name="obj"> converted xml as object</param>
+            <returns>xml string</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.Int32)">
             <summary>
-            
+            Convert int to byte array
             </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <param name="n">int</param>
+            <returns> byte array </returns>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt32)">
-            <summary>
-            
-            </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <inheritdoc cref="M:CommunicationChannel.Converter.GetBytes(System.Int32)"/>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.Int16)">
-            <summary>
-            
-            </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <inheritdoc cref="M:CommunicationChannel.Converter.GetBytes(System.Int32)"/>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt16)">
-            <summary>
-            
-            </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <inheritdoc cref="M:CommunicationChannel.Converter.GetBytes(System.Int32)"/>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.Int64)">
-            <summary>
-            
-            </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <inheritdoc cref="M:CommunicationChannel.Converter.GetBytes(System.Int32)"/>
         </member>
         <member name="M:CommunicationChannel.Converter.GetBytes(System.UInt64)">
-            <summary>
-            
-            </summary>
-            <param name="n"></param>
-            <returns></returns>
+            <inheritdoc cref="M:CommunicationChannel.Converter.GetBytes(System.Int32)"/>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToUint(System.Byte[])">
             <summary>
-            
+            Convert byte array to unsigned int
             </summary>
-            <param name="bytes"></param>
-            <returns></returns>
+            <param name="bytes">byte array</param>
+            <returns>unsigned int</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToInt(System.Byte[])">
             <summary>
-            
+            Convert byte array to int
             </summary>
             <param name="bytes"></param>
-            <returns></returns>
+            <returns> int </returns>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToUshort(System.Byte[])">
             <summary>
-            
+            Convert byte array to 16-bit unsigned int
             </summary>
-            <param name="bytes"></param>
-            <returns></returns>
+            <param name="bytes">byte array</param>
+            <returns>16-bit unsigned int</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToShort(System.Byte[])">
             <summary>
-            
+            Convert byte array to 16-bit signed int
             </summary>
-            <param name="bytes"></param>
-            <returns></returns>
+            <param name="bytes">byte array</param>
+            <returns>16-bit signed int</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToUlong(System.Byte[])">
             <summary>
-            
+            Convert byte array to 64-bit unsigned int
             </summary>
-            <param name="bytes"></param>
-            <returns></returns>
+            <param name="bytes">byte array</param>
+            <returns>64-bit unsigned int</returns>
         </member>
         <member name="M:CommunicationChannel.Converter.BytesToLong(System.Byte[])">
             <summary>
-            
+            Convert byte array to 64-bit signed int
             </summary>
-            <param name="bytes"></param>
-            <returns></returns>
+            <param name="bytes">byte array</param>
+            <returns>64-bit signed int</returns>
         </member>
         <member name="T:CommunicationChannel.Protocol">
             <summary>
@@ -216,62 +313,68 @@
         </member>
         <member name="T:CommunicationChannel.Protocol.Command">
             <summary>
-            
+            Defines the protocols for the communication channel
             </summary>
         </member>
         <member name="F:CommunicationChannel.Protocol.Command.ConnectionEstablished">
             <summary>
-            
+            0 represents that connection is established
             </summary>
         </member>
         <member name="F:CommunicationChannel.Protocol.Command.DataReceivedConfirmation">
             <summary>
-            
+            1 represents that data is recieved by server
             </summary>
         </member>
         <member name="F:CommunicationChannel.Protocol.Command.Ping">
             <summary>
-            
+            2 represents that server is pinged
             </summary>
         </member>
         <member name="F:CommunicationChannel.Protocol.Command.SetNewpost">
             <summary>
-            
+            3 represents that new post is set
             </summary>
         </member>
         <member name="F:CommunicationChannel.Protocol.Command.Messages">
             <summary>
-            
+            4 represents messages
             </summary>
         </member>
         <member name="T:CommunicationChannel.Spooler">
             <summary>
-            
+            This class is used for saving, updating the data in the queue list.
             </summary>
         </member>
         <member name="M:CommunicationChannel.Spooler.AddToQuee(System.Byte[])">
             <summary>
-            
+            Add the data to the spooler Queue.
             </summary>
-            <param name="data"></param>
+            <param name="data">byte array</param>
+        </member>
+        <member name="M:CommunicationChannel.Spooler.RemovePersistent(System.UInt32)">
+            <summary>
+            Remove the data that from the spooler Queue.
+            </summary>
+            <param name="dataId"> Data id</param>
         </member>
         <member name="M:CommunicationChannel.Spooler.OnSendCompleted(System.Byte[],System.Exception,System.Boolean)">
             <summary>
-            
+            On send completed it remove the sent packet and insert in the spooler queue before closing the communication channnel.
             </summary>
-            <param name="data"></param>
-            <param name="ex"></param>
-            <param name="connectionIsLost"></param>
+            <param name="data">data</param>
+            <param name="ex">exception</param>
+            <param name="connectionIsLost">connection status</param>
         </member>
         <member name="M:CommunicationChannel.Spooler.OnConfirmReceipt(System.UInt32)">
             <summary>
-            
+            Confirm the receipt status on the sent data before sending the next message
             </summary>
-            <param name="dataId"></param>
+            <param name="dataId"> data ID</param>
         </member>
         <member name="T:CommunicationChannel.Tcp">
             <summary>
-            
+            This class is used for establishing link connection and communicating with the server.
             </summary>
         </member>
         <member name="M:CommunicationChannel.Tcp.SendData(System.Byte[])">
@@ -293,69 +396,81 @@
             Establish the connection and start the spooler
             </summary>
         </member>
+        <member name="T:CommunicationChannel.Tcp.ErrorType">
+            <summary>
+            Provides the base for enumerations to represent errors.
+            </summary>
+        </member>
         <member name="M:CommunicationChannel.Tcp.Disconnect(System.Boolean)">
             <summary>
-            
+            Used to make a connection if the communication link breaks.
             </summary>
             <param name="tryConnectAgain"></param>
         </member>
         <member name="M:CommunicationChannel.Tcp.IsConnected">
             <summary>
-            
+            Find if the socket is connected to the remote host.
             </summary>
             <returns></returns>
         </member>
         <member name="T:CommunicationChannel.Utility">
             <summary>
-            
+             This is an utility class which provides method to converting data, hashing data or get neccesity information.
             </summary>
         </member>
         <member name="M:CommunicationChannel.Utility.DataId(System.Byte[])">
             <summary>
-            
+            Converts the Byte array to Uintegers.
             </summary>
-            <param name="data"></param>
-            <returns></returns>
+            <param name="data"> Byte Array </param>
+            <returns>Integer</returns>
         </member>
         <member name="M:CommunicationChannel.Utility.DataIdBinary(System.Byte[])">
             <summary>
-            
+            Return Byte Array from DataId.
             </summary>
-            <param name="data"></param>
-            <returns></returns>
+            <param name="data">Byte Array</param>
+            <returns>Byte Array</returns>
         </member>
         <member name="M:CommunicationChannel.Utility.FastHash(System.Byte[])">
             <summary>
-            
+            To Hash the data.
             </summary>
-            <param name="data"></param>
+            <param name="data">Byte Array</param>
             <returns></returns>
         </member>
         <member name="M:CommunicationChannel.Utility.GetLocalIPAddress">
             <summary>
-            
+            Resolves an IP address to an IPHostEntry instance.
             </summary>
-            <returns></returns>
+            <returns>IP</returns>
         </member>
         <member name="T:Bytes">
             <summary>
-            
+            This class contains the operations, which are helpful in processing bytes array.
             </summary>
         </member>
         <member name="M:Bytes.Reverse(System.Byte[])">
             <summary>
-            
+            Reverse the recieve byte.
             </summary>
-            <param name="me"></param>
-            <returns></returns>
+            <param name="me">extend the method of byte array.</param>
+            <returns>reverserd byte</returns>
+        </member>
+        <member name="M:Bytes.Combine(System.Byte[],System.Byte[],System.Byte[][])">
+            <summary>
+            Combine the data packets into single byte array.
+            </summary>
+            <param name="me"> extend the method of byte array. </param>
+            <param name="first">byte array</param>
+            <param name="element">byte array list</param>
+            <returns>combined byte array</returns>
         </member>
         <member name="M:Bytes.Combine(System.Byte[],System.Byte[])">
-            <summary>
-            
-            </summary>
-            <param name="me"></param>
-            <param name="byteArray"></param>
-            <returns></returns>
+            <inheritdoc cref="M:Bytes.Combine(System.Byte[],System.Byte[],System.Byte[][])"/>
+        </member>
+        <member name="M:Bytes.Combine(System.Byte[][])">
+            <inheritdoc cref="M:Bytes.Combine(System.Byte[],System.Byte[],System.Byte[][])"/>
         </member>
         <member name="M:Bytes.Split(System.Byte[])">
             <summary>
@@ -366,77 +481,105 @@
         </member>
         <!-- Badly formed XML comment ignored for member "M:Bytes.Join(System.Byte[],System.Byte[][])" -->
         <member name="M:Bytes.Join(System.Byte[][])">
-            <summary>
-            Join data packets
-            </summary>
-            <param name="values">packages to join</param>
-            <returns>Byte array splittable</returns>
-        </member>
-        <member name="M:Bytes.GetBytes(System.String)">
-            <summary>
-            
-            </summary>
-            <param name="me"></param>
-            <returns></returns>
+            <inheritdoc cref="M:Bytes.Join(System.Byte[],System.Byte[][])"/>
         </member>
         <member name="M:Bytes.GetBytesFromASCII(System.String)">
             <summary>
-            
+            Get bytes from ASCII.
             </summary>
-            <param name="me"></param>
-            <returns></returns>
+            <param name="me"> string to get byte from.</param>
+            <returns>byte array</returns>
         </member>
         <member name="M:Bytes.ToUnicode(System.Byte[])">
             <summary>
-            
+            Get unicode from byte array.
             </summary>
-            <param name="me"></param>
-            <returns></returns>
+            <param name="me">byte array</param>
+            <returns> unicode string </returns>
         </member>
         <member name="M:Bytes.ToASCII(System.Byte[])">
             <summary>
-            
+            Get ASCII from byte array.
             </summary>
-            <param name="me"></param>
-            <returns></returns>
+            <param name="me">byte array</param>
+            <returns> ASCII</returns>
+        </member>
+        <member name="M:Bytes.ToBase64(System.Byte[])">
+            <summary>
+            Get Base64 from byte array.
+            </summary>
+            <param name="me">byte array</param>
+            <returns> Base64 string</returns>
+        </member>
+        <member name="M:Bytes.ToHex(System.Byte[])">
+            <summary>
+            Get hex from byte array.
+            </summary>
+            <param name="bytes">byte array</param>
+            <returns> hex string</returns>
+        </member>
+        <member name="M:Bytes.Base64ToBytes(System.String)">
+            <summary>
+            Get byte array from Base64 string.
+            </summary>
+            <param name="base64">Base64 string</param>
+            <returns> byte array</returns>
+        </member>
+        <member name="M:Bytes.HexToBytes(System.String)">
+            <summary>
+            Get byte array from hex.
+            </summary>
+            <param name="hex">hex string</param>
+            <returns>byte array</returns>
         </member>
         <member name="M:Bytes.Take(System.Byte[],System.Int32)">
             <summary>
-            
+            Take the define number of elements from the byte array.
             </summary>
-            <param name="source"></param>
-            <param name="length"></param>
-            <returns></returns>
+            <param name="source">byte array</param>
+            <param name="length"> number of element to take</param>
+            <returns> byte array</returns>
         </member>
         <member name="M:Bytes.Skip(System.Byte[],System.Int32)">
             <summary>
-            
+            Skip the byte from the byte array
             </summary>
-            <param name="source"></param>
-            <param name="offset"></param>
-            <returns></returns>
+            <param name="source"> byte array</param>
+            <param name="offset"> number of the byte to skip</param>
+            <returns> byte array </returns>
         </member>
         <member name="M:Bytes.SequenceEqual(System.Byte[],System.Byte[])">
             <summary>
-            
+            Compare the sequence of the two byte array.
             </summary>
-            <param name="source"></param>
-            <param name="compareTo"></param>
-            <returns></returns>
+            <param name="source"> source byte array</param>
+            <param name="compareTo"> byte array to be compared with</param>
+            <returns> True or False </returns>
         </member>
         <member name="M:Bytes.GetBytes(System.Int32)">
             <summary>
-            
+            Transform a primordial value into the byte array representing it.
             </summary>
-            <param name="value"></param>
-            <returns></returns>
+            <param name="value">Value to convert</param>
+            <returns>Bytes array to represent the value</returns>
         </member>
         <member name="M:Bytes.GetBytes(System.UInt32)">
-            <summary>
-            
-            </summary>
-            <param name="value"></param>
-            <returns></returns>
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
+        </member>
+        <member name="M:Bytes.GetBytes(System.Int64)">
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
+        </member>
+        <member name="M:Bytes.GetBytes(System.UInt64)">
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
+        </member>
+        <member name="M:Bytes.GetBytes(System.Int16)">
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
+        </member>
+        <member name="M:Bytes.GetBytes(System.UInt16)">
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
+        </member>
+        <member name="M:Bytes.GetBytes(System.String)">
+            <inheritdoc cref="M:Bytes.GetBytes(System.Int32)"/>
         </member>
     </members>
 </doc>
