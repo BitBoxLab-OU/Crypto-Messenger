@@ -78,6 +78,9 @@ namespace EncryptedMessaging
             //Empty constructor for serialization
         }
         internal Context Context;
+        /// <summary>
+        /// Represents the method that will handle the proporty changed event raised when a property when a property is changed on a component.
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         internal string _name;
@@ -130,28 +133,78 @@ namespace EncryptedMessaging
             }
         }
 
+        /// <summary>
+        /// Represents an ARGB (alpha, red, green, blue) color.
+        /// </summary>
         [XmlIgnore]
+        
         public System.Drawing.Color LightColor;
-
+        /// <summary>
+        /// Represents an ARGB (alpha, red, green, blue) color.
+        /// </summary>
+       
         [XmlIgnore]
         public System.Drawing.Color DarkColor;
-
+        /// <summary>
+        /// Convert color to hex.
+        /// </summary>
+        
         [XmlIgnore]
         public string LightColorAsHex => $"#{LightColor.R:X2}{LightColor.G:X2}{LightColor.B:X2}";
-
+        /// <summary>
+        /// Convert color to hex.
+        /// </summary>
+        
         [XmlIgnore]
         public string DarkColorAsHex => $"#{DarkColor.R:X2}{DarkColor.G:X2}{DarkColor.B:X2}";
-
+        
+        /// <summary>
+        /// Language used for this contact.
+        /// </summary>
         public string Language; // 2 character to indicate the language used for this contact, for example EN, IT, etc..
+        
+        /// <summary>
+        /// Operating system in use for runtime application.
+        /// </summary>
         public RuntimePlatform Os;
+
+        /// <summary>
+        /// Base class for the runtime platform.
+        /// </summary>
         public enum RuntimePlatform
-        {
+        {   /// <summary>
+            /// Undefined
+            /// </summary>
             Undefined,
+            
+            /// <summary>
+            /// Andriod
+            /// </summary>
             Android,
+
+            /// <summary>
+            ///IOS 
+            /// </summary>
             iOS,
+            
+            /// <summary>
+            /// Windows
+            /// </summary>
             Windows,
+            
+            /// <summary>
+            /// Universal windows platform
+            /// </summary>
             UWP,
+            
+            /// <summary>
+            /// Unix
+            /// </summary>
             Unix,
+
+            /// <summary>
+            /// Macintosh
+            /// </summary>
             Mac
         }
         /// <summary>
@@ -282,10 +335,20 @@ namespace EncryptedMessaging
             OnPropertyChanged(nameof(LastMessageTimeText));
             OnPropertyChanged(nameof(LastMessageTimeDistance));
         }
+        
+        /// <summary>
+        /// Date of the last message time of the user.
+        /// </summary>
         public DateTime LastNotMyMessageTime;
+        
+        
         public DateTime LastNotMyMessageTimeAtSendLastReading;
 
         private string _oldLastMessageTimeDistance;
+        
+        /// <summary>
+        /// 
+        /// </summary>
         [XmlIgnore]
         public string LastMessageTimeDistance
         {
@@ -317,6 +380,10 @@ namespace EncryptedMessaging
         [XmlIgnore]
         public List<byte[]> Participants { get; private set; }
         private bool _isBlocked;
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsBlocked
         {
             get { return _isBlocked; }
@@ -329,8 +396,19 @@ namespace EncryptedMessaging
                 }
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
         public bool ImBlocked { get; set; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public bool IsMuted { get; set; }
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public bool SendConfirmationOfReading = true;
 
         /// <summary>
@@ -338,8 +416,15 @@ namespace EncryptedMessaging
         /// </summary>
         public bool TranslationOfMessages;
 
+        /// <summary>
+        /// 
+        /// </summary>
         [XmlIgnore]
         public bool IsVisible => !IsServer;
+        
+        /// <summary>
+        /// 
+        /// </summary>
         [XmlIgnore]
         public bool IsServer = false;
         internal void UpdateLastReaded(ulong idParticipant, DateTime dateTime)
@@ -362,7 +447,15 @@ namespace EncryptedMessaging
         }
         [XmlIgnore]
         internal DateTime ServerLoggedTime;
+
+        /// <summary>
+        /// Set message information on last message delivery.
+        /// </summary>
         public MessageInfo LastMessageDelivered;
+
+        /// <summary>
+        /// Set message information on last message sent.
+        /// </summary>
         public MessageInfo LastMessageSent;
         internal void SetLastMessageSent(DateTime creation, uint dataId) => LastMessageSent = new MessageInfo() { Creation = creation.Ticks, DataId = dataId };
         /// <summary>
@@ -370,8 +463,19 @@ namespace EncryptedMessaging
         /// </summary>
         public class MessageInfo
         {
+            /// <summary>
+            /// Message information function for creation and dataId.
+            /// </summary>
             public MessageInfo() { }
+            
+            /// <summary>
+            /// Integer data type for when a message is created
+            /// </summary>
             public long Creation;
+            
+            /// <summary>
+            /// unsigned integer data id.
+            /// </summary>
             public uint DataId;
         }
 
@@ -390,9 +494,13 @@ namespace EncryptedMessaging
         }
 
         private List<RemoteReaded> _remoteReadedList = new List<RemoteReaded>();
+       
+        /// <summary>
+        /// Add new timestamp to to the list.
+        /// </summary>
         public RemoteReaded[] RemoteReadedList { get => _remoteReadedList.ToArray(); set => _remoteReadedList = new List<RemoteReaded>(value); }
        /// <summary>
-       /// 
+       /// Add a timestamp to the message.
        /// </summary>
         public class RemoteReaded
         {
@@ -403,18 +511,36 @@ namespace EncryptedMessaging
             {
                 // empty constructor for serialization
             }
+            /// <summary>
+            /// unsigned integer value.
+            /// </summary>
             public ulong IdParticipant;
+
+            /// <summary>
+            /// integer value for time.
+            /// </summary>
             public long TimeStamp;
+            
+            /// <summary>
+            /// Update the timestamp on the message.
+            /// </summary>
             [XmlIgnore]
             public DateTime DateTime { get => new DateTime(TimeStamp); set => TimeStamp = value.Ticks; }
         }
 
+        /// <summary>
+        /// Set as group if more than two participants.
+        /// </summary>
         [XmlIgnore]
         public bool IsGroup => Participants.Count > 2;
         internal void RaiseEventLastMessageChanged(Message message)
         {
             LastMessageChanged?.Invoke(message);
         }
+
+        /// <summary>
+        /// Check if the last message was changed.
+        /// </summary>
         public event Contacts.LastMessagChanged LastMessageChanged;
 
         /// <summary>
@@ -467,14 +593,29 @@ namespace EncryptedMessaging
             }
         }
 
+        /// <summary>
+        /// Get the preview of last message.
+        /// </summary>
         public string LastMessagePreview { get; set; } // Do not use this parameter to set. To set use SetLastMessagePreview. This is public only for deserialization purposes
+        
+        /// <summary>
+        /// Boolean check for last message.
+        /// </summary>
         public bool LastMessageIsMy { get; set; } // Don't use 'set', is available only for deserialization purposes
         /// <summary>
         /// This is an empirical value, please do not use it unless necessary. Unfortunately in iOS it is not possible to locally update the red dot with the number of unread messages, this value must be sent with the notification.
         /// </summary>
         [XmlIgnore]
         public uint RemoteUnreaded { get; internal set; }
+        
+        /// <summary>
+        /// Integer value for last message font attributes.
+        /// </summary>
         public int LastMessageFontAttributes { get; set; }
+        
+        /// <summary>
+        /// Integer value of the Chat Id.
+        /// </summary>
         [XmlIgnore]
         public ulong ChatId { get; private set; }
         /// <summary>
@@ -483,6 +624,9 @@ namespace EncryptedMessaging
         [XmlIgnore]
         public ulong? UserId { get; private set; } // This value is set only if it is not a group, and is used to identify a single user
         internal string _firebaseToken;
+       /// <summary>
+       /// Get the fire base token value and save it.
+       /// </summary>
         public string FirebaseToken
         {
             get
@@ -498,6 +642,10 @@ namespace EncryptedMessaging
             }
         }
         internal string _deviceToken;
+        
+        /// <summary>
+        ///Return and save the device token. 
+        /// </summary>
         public string DeviceToken
         {
             get
@@ -512,6 +660,10 @@ namespace EncryptedMessaging
                     Save(true);
             }
         }
+
+        /// <summary>
+        /// Set avator for the input byte array.
+        /// </summary>
         [XmlIgnore]
         public byte[] Avatar
         {
@@ -538,6 +690,10 @@ namespace EncryptedMessaging
                 Context.CloudManager?.LoadDataFromCloud("Avatar", UserId.ToString(), avatarSize, true); //               Cloud.SendCloudCommands.GetAvatar(Context, (ulong)UserId, avatarSize);
         }
 
+        /// <summary>
+        /// Save the data on cloud storage.
+        /// </summary>
+        /// <param name="cloudBackup">Boolean</param>
         public void Save(bool cloudBackup = false)
         {
             if (Context?.My.IsServer != false || IsServer || !Context.Contacts.ContactsList.Contains(this)) return;
@@ -583,12 +739,20 @@ namespace EncryptedMessaging
                     Context.Contacts.ContactsList.Remove(this);
             }
         }
+        /// <summary>
+        /// Create a shallow copy of the current object
+        /// </summary>
+        /// <returns></returns>
         public object Clone() => MemberwiseClone();
 
         /// <summary>
         /// The last time the user watched this chat. All messages after this date are to be considered as unseen.
         /// </summary>
         public DateTime LastSeen { get; set; }
+
+        /// <summary>
+        /// Integer value get for unread messages.
+        /// </summary>
         public int UnreadMessages { get; set; } // Don't use 'set', is available only for deserialization purposes
         internal void SetUnreadMessages(int unreadMessages, bool save = false)
         {
@@ -605,8 +769,15 @@ namespace EncryptedMessaging
         [XmlIgnore]
         public object MessageContainerUI { get; set; }
        
+        /// <summary>
+        /// Get thr QR code string for the context.
+        /// </summary>
+        /// <returns></returns>
         public string GetQrCode() => ContactMessage.GetQrCode(this, Context);
 
+        /// <summary>
+        /// Get the First letter and set it to uppercase.
+        /// </summary>
         [XmlIgnore]
         public object NameFirstLetter => Name.Substring(0, 1).ToUpper();
 

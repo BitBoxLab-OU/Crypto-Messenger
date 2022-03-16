@@ -279,6 +279,10 @@ namespace EncryptedMessaging
         internal int Domain;
         internal Channel Channel;
         /// <summary>
+        /// Number of failure connnection
+        /// </summary>
+        public ulong KeepAliveFailure => Channel.KeepAliveFailures;
+        /// <summary>
         /// Returns the current status of the connection with the router/server
         /// </summary>
         public bool IsConnected => Channel != null && Channel.IsConnected();
@@ -300,9 +304,32 @@ namespace EncryptedMessaging
         /// </summary>
         public readonly Action<Action> InvokeOnMainThread;
 
+        internal ICloudManager CloudManager;
+
         /// <summary>
-        /// Set up a cloud during context initialization if you want to use cloud features to save avatarms, contacts and other data
+        /// Set up a cloud during context initialization if you want to use cloud features to save avatarms, contacts and other data 
         /// </summary>
-        public ICloudManager CloudManager;
+        /// <param name="cloudManager">The class that allows you to manage Cloud features</param>
+        public void AddCloudManager(ICloudManager cloudManager)
+        {
+            void onMessageReceived(Message message)
+            {
+                if (message.Contact.ChatId == CloudManager.Cloud.ChatId) // Security filter
+                {
+                    if (message.Type == MessageFormat.MessageType.SubApplicationCommandWithData || message.Type == MessageFormat.MessageType.SubApplicationCommandWithParameters)
+                    {
+                        message.GetSubApplicationCommand(out ushort appId, out ushort command, out byte[] data, out List<byte[]> parameters);
+                        if (appId == BitConverter.ToUInt16(Encoding.ASCII.GetBytes("cloud"), 0))
+                        {
+                            cloudManager.OnCommand(command, data != null ? new byte[][] { data } : parameters?.ToArray());
+                        }
+                    }
+                }
+            }
+            void sendCommand(ushort command, byte[][] parameters) => Messaging.SendCommandToSubApplication(CloudManager.Cloud, BitConverter.ToUInt16(Encoding.ASCII.GetBytes("web"), 0), (ushort)command, true, false, parameters);
+            cloudManager.SendCommand = sendCommand;
+            OnContactEvent += onMessageReceived; // Intercept messages for the cloud client
+            CloudManager = cloudManager;
+        }
     }
 }

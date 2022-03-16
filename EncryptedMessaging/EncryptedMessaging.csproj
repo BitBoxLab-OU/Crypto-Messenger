@@ -15,6 +15,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_A|AnyCPU'">
     <DebugType></DebugType>
     <DefineConstants>DEBUG;DEBUG_A;NETSTANDARD;NETSTANDARD2_0</DefineConstants>
+    <DocumentationFile>C:\documentation\CryptoMessenger\Crypto-Messenger\EncryptedMessaging\EncryptedMessaging.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_B|AnyCPU'">
     <DefineConstants>DEBUG;DEBUG_B</DefineConstants>
@@ -64,9 +65,6 @@
     <Compile Remove="Properties\**" />
     <EmbeddedResource Remove="Properties\**" />
     <None Remove="Properties\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="Cloud.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\SecureStorageGit\SecureStorage\SecureStorage.csproj" />

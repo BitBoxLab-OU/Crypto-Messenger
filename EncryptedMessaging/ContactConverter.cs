@@ -37,7 +37,11 @@ namespace EncryptedMessaging
 		/// This function obtains the list of participants from a string that represents everyone's public key
 		/// </summary>
 		/// <param name="publicKeys">string that represents everyone's public key</param>
+		/// <param name="participants">participants in the group</param>
 		/// <returns>Boolean</returns>
+
+
+
 		public bool PublicKeysToParticipants(string publicKeys, out List<byte[]> participants)
 		{
 			participants = new List<byte[]>();

@@ -10,7 +10,7 @@ namespace EncryptedMessaging
     //========================================================================================================
     /// <summary>
     ///Here are all the functions necessary to process messages in binary format, create messages and read them.
-     /// </summary>
+    /// </summary>
     public class Message
     {
         /// <summary>
@@ -50,13 +50,16 @@ namespace EncryptedMessaging
                 Data = data;
             }
         }
+        /// <summary>
+        /// Context implementation.
+        /// </summary>
         public Context Context;
         /// <summary>
-        /// The chat group
+        /// The chat group.
         /// </summary>
         public Contact Contact { get; set; }
         /// <summary>
-        /// The public key of the author
+        /// The public key of the author.
         /// </summary>
         public MessageFormat.MessageType Type { get; internal set; }
         /// <summary>
@@ -64,12 +67,12 @@ namespace EncryptedMessaging
         /// </summary>
         public readonly ulong AuthorId;
         /// <summary>
-        /// Unique identification number of the chat
+        /// Unique identification number of the chat.
         /// </summary>
         public readonly ulong ChatId;
         internal byte[] Author;
         /// <summary>
-        /// This array is the identifier of the chat participant
+        /// This array is the identifier of the chat participant.
         /// If you want to get the corresponding contact, you have to use the function Contacts.GetParticipant(Author), If the contact is not in the address book you receive a null value
         /// </summary>
         public byte[] GetAuthor() => Author;
@@ -220,7 +223,10 @@ namespace EncryptedMessaging
             byte[] action() => GetData();
             return action;
         }
-
+        /// <summary>
+        /// Delete the post. 
+        /// </summary>
+        /// <param name="alsoDeleteRemote">Boolean</param>
         public void Delete(bool alsoDeleteRemote = true)
         {
             Context.Repository.DeletePost(ReceptionTime, Contact);
@@ -309,10 +315,13 @@ namespace EncryptedMessaging
             Data,
             /// <summary>Used to send the name with which the contract is registered in my address book, so I can have notifications with the name used locally in my contacts</summary>
             NameChange,
+            /// <summary>Used to check the status of the contact</summary>
             ContactStatus,
+            /// <summary>Message type that is used in form</summary>
             Binary,
             /// <summary>Used to send simple information (See the InformType enumerator for a list of the information it passes)</summary>
             Inform,
+            /// <summary>Contact stored on th phone </summary>
             PhoneContact,
             /// <summary>Obsolete</summary>
             [Obsolete("Is deprecated, to be replaced with SubApplicationCommandWithData")]

@@ -38,9 +38,14 @@ namespace EncryptedMessaging
         /// <param name="shared">If true, an object in the common area will be deleted, otherwise an object will be deleted from the private area accessible only to the current user</param>
         void DeleteDataOnCloud(string type, string name, bool shared = false);
 
-        void OnLoadData(string type, string name, bool shared, byte[] data);
+        
+        Contact Cloud { get; set; }
 
-        event EventHandler  OnDataLoad;
+        void OnCommand(ushort command, byte[][] parameters);
+       
+        Action<ushort, byte[][]> SendCommand { set; get; }
+
+        //void SendCommand(Action<  float , byte[][] >);
 
     }
 }

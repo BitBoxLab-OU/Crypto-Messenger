@@ -120,6 +120,8 @@ namespace EncryptedMessaging
 		/// <param name="context">Context</param>
 		/// <param name="language">Language</param>
 		/// <param name="os">Os</param>
+		/// <param name="firebaseToken">Token Firebase</param>
+		/// <param name="deviceToken">Device token for IOS</param>
 		public void GetProperties(Context context, out string language, out Contact.RuntimePlatform os, out string firebaseToken, out string deviceToken)
 		{
 			if (Participants.Count <= 2)
@@ -146,24 +148,54 @@ namespace EncryptedMessaging
 		/// Update the name of the group.
 		/// </summary>
 		public string Name { get => _name; set { OldName = _name; _name = value; } }
+		/// <summary>
+		/// Boolean for update, default is set false.
+		/// </summary>
 		public bool IsUpdate = false;
+
+		/// <summary>
+		/// List for participants.
+		/// </summary>
 		public List<Properties> Participants = new List<Properties>();
 		
 		/// <summary>
-		/// Strings used in this class
+		/// Strings used in this class.
 		/// </summary>
 		public class Properties
-		{
+		{	
+			/// <summary>
+			/// NAme of the group.
+			/// </summary>
 			public string Name;
+			
+			/// <summary>
+			/// Language.
+			/// </summary>
 			public string Language;
+			
+			/// <summary>
+			/// Byte array for key.
+			/// </summary>
 			public byte[] Key;
+			
+			/// <summary>
+			/// Operating system.
+			/// </summary>
 			public Contact.RuntimePlatform Os;
+			
+			/// <summary>
+			/// Firebase Token.
+			/// </summary>
 			public string FirebaseToken;
+			
+			/// <summary>
+			/// Device token for IOS.
+			/// </summary>
 			public string DeviceToken;
 		}
 
 		/// <summary>
-		/// Get the keys of the particpant bu converting the byte array input.
+		/// Get the keys of the particpant by converting the byte array input.
 		/// </summary>
 		/// <param name="context">Context</param>
 		/// <returns>Keys</returns>

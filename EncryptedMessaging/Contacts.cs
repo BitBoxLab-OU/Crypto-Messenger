@@ -30,6 +30,11 @@ namespace EncryptedMessaging
         {
             //code based on https://peteohanlon.wordpress.com/2008/10/22/bulk-loading-in-observablecollection/
             private bool _suppressNotification = false;
+            
+            /// <summary>
+            /// Fucntion for change in the partipants in the group.
+            /// </summary>
+            /// <param name="e"></param>
             protected override void OnCollectionChanged(System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
             {
                 if (!_suppressNotification)
@@ -50,8 +55,15 @@ namespace EncryptedMessaging
                 OnCollectionChanged(new System.Collections.Specialized.NotifyCollectionChangedEventArgs(System.Collections.Specialized.NotifyCollectionChangedAction.Reset));
             }
         }
-
+        /// <summary>
+        /// Server side rule for last message changed.
+        /// </summary>
+        /// <param name="message">string</param>
         public delegate void LastMessagChanged(Message message);
+
+        /// <summary>
+        /// Event action for contact list change.
+        /// </summary>
         public event Action<List<Contact>> ContactsListChanged;
         private void RefreshLastMessageTimeDistance(object n)
         {
@@ -659,18 +671,19 @@ namespace EncryptedMessaging
         /// Check if a contact already exists. The check is done using public keys
         /// </summary>
         /// <param name="publicKeys">PublicKeys of contact</param>
+        /// <param name="name">Name of the partipants</param>
         /// <returns>Returns the duplicate contact if it already exists, otherwise null</returns>
         public Contact ContactAlreadyExists(string publicKeys, string name) => Context.ContactConverter.PublicKeysToParticipants(publicKeys, out List<byte[]> participants) ? ContactAlreadyExists(participants, name) : null;
 
         /// <summary>
-        /// 
+        /// Convert public key to participants.
         /// </summary>
         /// <param name="publicKeys"></param>
         /// <returns></returns>
         public string Pseudonym(string publicKeys) => Context.ContactConverter.PublicKeysToParticipants(publicKeys, out List<byte[]> participants) ? Pseudonym(participants) : null;
 
         /// <summary>
-        /// Assign a Pseudonym for a participant  in the list.
+        /// Assign a Pseudonym for a participant in the list.
         /// </summary>
         /// <param name="participants"></param>
         /// <returns></returns>
@@ -684,7 +697,7 @@ namespace EncryptedMessaging
         public string Pseudonym(ulong userId) => Pseudonym(new List<ulong>(new ulong[] { userId }));
 
         /// <summary>
-        /// 
+        /// Assign pseudonym for the unsigned integer user id.
         /// </summary>
         /// <param name="userIds"></param>
         /// <returns></returns>
@@ -700,7 +713,7 @@ namespace EncryptedMessaging
         }
 
         /// <summary>
-        /// 
+        /// Color functionality for the event on user Id.
         /// </summary>
         /// <param name="userId"></param>
         /// <param name="light"></param>
@@ -708,7 +721,7 @@ namespace EncryptedMessaging
         public void Colors(ulong userId, out System.Drawing.Color light, out System.Drawing.Color dark) => Colors(new List<ulong>(new ulong[] { userId }), out light, out dark);
 
         /// <summary>
-        /// 
+        /// Color functionality for the event on partipants.
         /// </summary>
         /// <param name="participants"></param>
         /// <param name="light"></param>
@@ -750,7 +763,7 @@ namespace EncryptedMessaging
         /// <summary>
         /// Create Contact user data in the contact is null.
         /// </summary>
-        /// <param name="nameless"></param>
+        /// <param name="nameless">boolean</param>
         /// <returns></returns>
         public Contact GetMyContact(bool nameless = false)
         {
@@ -761,8 +774,15 @@ namespace EncryptedMessaging
         //#if DEBUG
         //static public string CloudPubKey = @"A4f7EZyD/lVQd5P4r0H3haPCdQJNOU/6sm7LsZoIT+XH";
         //#else
+
+        /// <summary>
+        ///Public key for cloud. 
+        /// </summary>
         public static string CloudPubKey = @"ApkrRQUe7qbaKY05Lbs5z+o001UNzXlfHgm+9KEN41vE";
 
+        /// <summary>
+        /// set unsigned integer value for cloud user id.
+        /// </summary>
         public static ulong CloudUserId;
         //#endif
         /// <summary>

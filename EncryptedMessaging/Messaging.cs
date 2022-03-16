@@ -396,6 +396,7 @@ namespace EncryptedMessaging
         /// </summary>
         /// <param name="toIdUsers">The recipients</param>
         /// <param name="binaryData">Binary data block to send</param>
+        /// <param name="chatId">Id of the chat</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         public void SendBinaryUnencrypetd(ulong chatId, ulong[] toIdUsers, byte[] binaryData, bool directlyWithoutSpooler = false) => SendMessage(MessageType.Binary, binaryData, null, null, chatId, toIdUsers, directlyWithoutSpooler, false);
 
@@ -570,7 +571,7 @@ namespace EncryptedMessaging
         /// <summary>
         /// The only type of audio file allowed is mp3, with a speed of 64 k bps or lower.
         /// </summary>
-        /// <param name="audio">audio call</param>
+        /// <param name="call">audio call</param>
         /// <param name="toContact">The recipient</param>
         public void SendVideoCall(byte[] call, Contact toContact) => SendMessage(MessageType.VideoCall, call, toContact);
 
