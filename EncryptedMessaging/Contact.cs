@@ -673,7 +673,7 @@ namespace EncryptedMessaging
                 //Debugger.Break(); // Operation not valid for groups
                 return null;
             }
-            internal set
+            set
             {
                 Context.SecureStorage.DataStorage.SaveData(value, "avatar" + ChatId);
                 OnPropertyChanged(nameof(Avatar));

@@ -679,8 +679,14 @@ namespace EncryptedMessaging
             SendMessage(MessageType.ShareEncryptedContent, data, toContact);
         }
 
+
+        public  void SendPushNotification(string deviceToken, ulong chatId, bool isVideo, string contactNameOrigin)
+        {
+            Context.CloudManager?.SendPushNotification(deviceToken, chatId, isVideo, contactNameOrigin);
+        }
+
 #if DEBUG_A
-		internal const string PrivK_A = "EVsmjQouKEOrhDxuKr3gZrjMZT8BscYNYzZIiC/ZdH8=";
+        internal const string PrivK_A = "EVsmjQouKEOrhDxuKr3gZrjMZT8BscYNYzZIiC/ZdH8=";
 		internal const string PubK_B = "AsTj4Gk6atGeKPPRe1YTdltQKHAKRHTUIXv6WNt2eZJK";
 #elif DEBUG_B
 		internal const string PrivK_B = "3UVEkn68RJGvFmEl2/E7gflriywwQK/5rjPTQSERtIQ=";

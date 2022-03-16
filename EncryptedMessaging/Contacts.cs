@@ -133,6 +133,7 @@ namespace EncryptedMessaging
             {
                 if (ContactsList.ToList().Find((x) => x.UserId == contact.UserId) == null)
                     ContactsList.Add(contact);
+                
             }
             if (!Context.My.IsServer && !onlyServer)
             {

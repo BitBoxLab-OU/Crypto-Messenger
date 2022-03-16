@@ -117,7 +117,7 @@ namespace EncryptedMessaging
 
         private string _name;
         /// <summary>
-        /// Set or set the current username, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
+        /// Set or get the current username, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
         /// </summary>
         public string Name
         {
@@ -139,14 +139,22 @@ namespace EncryptedMessaging
                 }
                 return _name;
             }
-            set
+            set => SetName(value);
+        }
+
+        /// <summary>
+        /// Set the current username, if saveToCloud is true, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
+        /// </summary>
+        /// <param name="name">Name</param>
+        /// <param name="saveToCloud">if saveToCloud is true, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.</param>
+        public void SetName(string name, bool saveToCloud = true)
+        {
+            if (_name != name)
             {
-                if (_name != value)
-                {
-                    _name = value;
-                    Context.SecureStorage.Values.Set("MyName", _name);
+                _name = name;
+                Context.SecureStorage.Values.Set("MyName", _name);
+                if (saveToCloud)
                     BackupToCloud();
-                }
             }
         }
 
@@ -265,7 +273,7 @@ namespace EncryptedMessaging
         {
             Context.SecureStorage.DataStorage.SaveData(png, "avatar");
             var encryptedPng = Functions.Encrypt(png, GetPublicKeyBinary()); // The avatar is public but is encrypted using the contact's public key as a password, in this way it can only be decrypted by users who have this contact in the address book
-            Context.CloudManager?.SaveDataOnCloud("Avatar", GetId().ToString(), encryptedPng, true); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
+            Context.CloudManager?.SaveDataOnCloud("", "Avatar", encryptedPng); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
             Context.Contacts.ForEachContact(contact =>
             {
                 if ((DateTime.Now.ToLocalTime() - contact.LastMessageTime).TotalDays < 30) // To avoid creating too much traffic on the network, the information on the avatar update is sent only to those who have sent us messages in the last 30 days

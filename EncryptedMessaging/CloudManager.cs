@@ -38,9 +38,22 @@ namespace EncryptedMessaging
         /// <param name="shared">If true, an object in the common area will be deleted, otherwise an object will be deleted from the private area accessible only to the current user</param>
         void DeleteDataOnCloud(string type, string name, bool shared = false);
 
-        
-        Contact Cloud { get; set; }
+        /// <summary>
+        /// Send push notifications on the ios network via our open source cloud system
+        /// </summary>
+        /// <param name="deviceToken">IOS device Token</param>
+        /// <param name="chatId">ChatId</param>
+        /// <param name="isVideo">Is video</param>
+        /// <param name="contactNameOrigin">Name of contact to generate a notification</param>
+        void SendPushNotification(string deviceToken, ulong chatId, bool isVideo, string contactNameOrigin);
 
+
+        Contact Cloud { get; set; }
+        /// <summary>
+        /// It works like an event. It is generated when something is received from the cloud
+        /// </summary>
+        /// <param name="command">Command</param>
+        /// <param name="parameters">Parameters</param>
         void OnCommand(ushort command, byte[][] parameters);
        
         Action<ushort, byte[][]> SendCommand { set; get; }

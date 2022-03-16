@@ -281,7 +281,7 @@ namespace EncryptedMessaging
         /// <summary>
         /// Number of failure connnection
         /// </summary>
-        public ulong KeepAliveFailure => Channel.KeepAliveFailures;
+        public ulong KeepAliveFailures => Channel.KeepAliveFailures;
         /// <summary>
         /// Returns the current status of the connection with the router/server
         /// </summary>
