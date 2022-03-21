@@ -110,6 +110,22 @@
             <param name="name">The unique key assigned to the object</param>
             <param name="shared">If true, an object in the common area will be deleted, otherwise an object will be deleted from the private area accessible only to the current user</param>
         </member>
+        <member name="M:EncryptedMessaging.ICloudManager.SendPushNotification(System.String,System.UInt64,System.Boolean,System.String)">
+            <summary>
+            Send push notifications on the ios network via our open source cloud system
+            </summary>
+            <param name="deviceToken">IOS device Token</param>
+            <param name="chatId">ChatId</param>
+            <param name="isVideo">Is video</param>
+            <param name="contactNameOrigin">Name of contact to generate a notification</param>
+        </member>
+        <member name="M:EncryptedMessaging.ICloudManager.OnCommand(System.UInt16,System.Byte[][])">
+            <summary>
+            It works like an event. It is generated when something is received from the cloud
+            </summary>
+            <param name="command">Command</param>
+            <param name="parameters">Parameters</param>
+        </member>
         <member name="T:EncryptedMessaging.Contact">
             <summary>
             This class contains all the functionalities related to contact features.
@@ -1054,7 +1070,7 @@
             <param name="networkName">The name of the infrastructure. For tests we recommend using "testnet"</param>
             <param name="multipleChatModes">If this mode is enabled there will be multiple chat rooms simultaneously, all archived messages will be preloaded with the initialization of this library, this involves a large use of memory but a better user experience. Otherwise, only one char room will be managed at a time, archived messages will be loaded only when you enter the chat, this mode consumes less memory.</param>
             <param name="privateKeyOrPassphrase"></param>
-            <param name="isServer">Indicates if a server is initialized: The server has some differences compared to the device which are: It does not store contacts (contacts are acquired during the session and when it expires they are deleted, so the contacts are not even synchronized on the cloud, there is no is the backup and restore that instead occurs for applications on devices).</param>
+            <param name="isServer">Indicates if a server is initialized: The server has some differences compared to the device which are: It does not store contacts and posts (contacts are acquired during the session and when it expires they are deleted, so the contacts are not even synchronized on the cloud, there is no is the backup and restore that instead occurs for applications on devices).</param>
             <param name="internetAccess">True if network is available</param>
             <param name="invokeOnMainThread">Method that starts the main thread: Actions that have consequences with updating the user interface must run on the main thread otherwise they cause a crash</param>
             <param name="getSecureKeyValue">System secure function to read passwords and keys saved with the corresponding set function</param>
@@ -1155,6 +1171,16 @@
             If it is not set, the libraries do not know if there are changes in the state of the internet connection, and the messages could remain in the queue without being sent.
             </summary>
             <param name="Connectivity">Network connecttion status true or false</param>
+        </member>
+        <member name="P:EncryptedMessaging.Context.IsServer">
+            <summary>
+            Server mode is the exclusive mode for working without saving posts to the repositories. This is how server applications must be initialized. This property returns the status of the server mode.
+            </summary>
+        </member>
+        <member name="P:EncryptedMessaging.Context.KeepAliveFailures">
+            <summary>
+            Number of failure connnection
+            </summary>
         </member>
         <member name="P:EncryptedMessaging.Context.IsConnected">
             <summary>
@@ -2084,8 +2110,15 @@
         </member>
         <member name="P:EncryptedMessaging.My.Name">
             <summary>
-            Set or set the current username, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
+            Set or get the current username, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
             </summary>
+        </member>
+        <member name="M:EncryptedMessaging.My.SetName(System.String,System.Boolean)">
+            <summary>
+            Set the current username, if saveToCloud is true, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.
+            </summary>
+            <param name="name">Name</param>
+            <param name="saveToCloud">if saveToCloud is true, the data is saved on the cloud in an anonymous and encrypted way if an application usage limit is exceeded.</param>
         </member>
         <member name="P:EncryptedMessaging.My.FirebaseToken">
             <summary>
@@ -2130,7 +2163,7 @@
             <summary>
             Backup my name
             When the account is recovered with the passphrase, the name is recovered.
-            Account recovery is done by resetting the passphrase. This is the routine that is performed following the restore when the cloud sends the name used <see cref="M:EncryptedMessaging.ProcessResponsesFromCloud.OnData(EncryptedMessaging.Context,System.String,System.String,System.Byte[])">OnData</see>
+            Account recovery is done by resetting the passphrase. This is the routine that is performed following the restore when the cloud sends the name used <see cref="!:ProcessResponsesFromCloud.OnData(Context, string, string, byte[])">OnData</see>
             </summary>
         </member>
         <member name="F:EncryptedMessaging.My.NeedUpdateTheNotificationKeyToMyContacts">
@@ -2142,11 +2175,6 @@
             <summary>
             Update my data held to my contacts when necessary.
             When my device id or firebase id change (for non-application dependent events), an update is sent to my contacts so they can continue to notify me when they send me communications and messages
-            </summary>
-        </member>
-        <member name="T:EncryptedMessaging.ProcessResponsesFromCloud">
-            <summary>
-            Process handlling and generating outpusts based on the conditional functions implemented.
             </summary>
         </member>
         <member name="T:EncryptedMessaging.Repository">

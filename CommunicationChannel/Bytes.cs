@@ -29,7 +29,7 @@ public static class Bytes
     {
         foreach (var item in element)
             first = first.Combine(item);
-        return me.Combine(first, first, first);
+        return me.Combine(first);
     }
 
     ///<inheritdoc cref="Combine(byte[], byte[], byte[][])"/>

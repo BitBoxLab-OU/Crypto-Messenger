@@ -25,13 +25,13 @@ namespace EncryptedMessaging
         /// Display libraries used as read only.
         /// </summary>
         /// <param name="context"></param>
-        public Repository(Context context) => _context = context;
-        private readonly Context _context;
+        public Repository(Context context) => Context = context;
+        private readonly Context Context;
         /// <summary>
         /// Set maximum post length to 20 MB.
         /// </summary>
         public const int MaxPostLength = 20971520; //20 MegaByte
-        private string ChatPath(ulong chatId) => MapPath(Path.Combine(_context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), _context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
+        private string ChatPath(ulong chatId) => MapPath(Path.Combine(Context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), Context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
 
         /// <summary>
         /// Add the encrypted post to local storage and return the reception date
@@ -42,6 +42,8 @@ namespace EncryptedMessaging
         /// <returns></returns>
         public void AddPost(byte[] dataByteArray, ulong chatId, ref DateTime receptionDate)
         {
+            if (Context.My.IsServer)
+                return;
             if (receptionDate == default)
                 receptionDate = DateTime.UtcNow;
             var path = ChatPath(chatId);
@@ -86,7 +88,7 @@ namespace EncryptedMessaging
                 var n = 0;
                 foreach (var file in filesList)
                 {
-                    if (n >= _context.Setting.KeepPost || (Time.CurrentTimeGMT - file.ReceptionDate >= TimeSpan.FromDays(_context.Setting.PostPersistenceDays)))
+                    if (n >= Context.Setting.KeepPost || (Time.CurrentTimeGMT - file.ReceptionDate >= TimeSpan.FromDays(Context.Setting.PostPersistenceDays)))
                     {
                         File.Delete(file.FileName);
                         filesList.Remove(file);
@@ -110,11 +112,11 @@ namespace EncryptedMessaging
                     }
                 }
                 if (take == null)
-                    take = _context.Setting.MessagePagination;
+                    take = Context.Setting.MessagePagination;
                 var partialList = filesList.Skip(skip).Take((int)take).ToArray();
                 if (partialList.Length > 0)
                     olderPost = partialList.Last().ReceptionDate;
-                _context.Contacts.RefreshSuspend = true;
+                Context.Contacts.RefreshSuspend = true;
                 foreach (var file in partialList)
                 {
                     if (exclude == null || !exclude.Contains(file.ReceptionDate))
@@ -131,11 +133,11 @@ namespace EncryptedMessaging
                                 if (!ReceptionToPostId.ContainsKey(file.ReceptionDate))
                                     ReceptionToPostId.Add(file.ReceptionDate, PostId(data));
                             }
-                            _context.Messaging.ShowPost(data, chatId, file.ReceptionDate);
+                            Context.Messaging.ShowPost(data, chatId, file.ReceptionDate);
                         }
                     }
                 }
-                _context.Contacts.RefreshSuspend = false;
+                Context.Contacts.RefreshSuspend = false;
             }
             return olderPost;
         }
@@ -189,7 +191,7 @@ namespace EncryptedMessaging
                     {
                         receptionDateTime = GetFileDate(file);
                         var data = File.ReadAllBytes(file);
-                        if (_context.MessageFormat.ReadDataPost(data, chatId, receptionDateTime, out var message))
+                        if (Context.MessageFormat.ReadDataPost(data, chatId, receptionDateTime, out var message))
                         {
                             if (MessageFormat.MessageDescription.ContainsKey(message.Type))
                                 return message;
@@ -262,7 +264,7 @@ namespace EncryptedMessaging
         /// <param name="chatId">The chat in which to search for the post, identified by the chat ID</param>
         public void DeletePostByPostId(ulong postId, ulong chatId)
         {
-            var contact = _context.Contacts.GetContact(chatId);
+            var contact = Context.Contacts.GetContact(chatId);
             if (contact != null)
                 DeletePostByPostId(postId, contact);
         }
@@ -281,7 +283,7 @@ namespace EncryptedMessaging
                     {
                         ReceptionToPostId.Remove(x.Key);
                         DeletePost(x.Key, contact);
-                        _context.SecureStorage.ObjectStorage.DeleteObject(typeof(string), "t" + postId);
+                        Context.SecureStorage.ObjectStorage.DeleteObject(typeof(string), "t" + postId);
                     }
                 });
             }
