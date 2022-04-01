@@ -74,14 +74,10 @@ namespace EncryptedMessaging
             if (Context.MessageFormat.ReadDataPost(data, chatId, receptionTime, out var message, true))
             {
                 var isViewable = MessageDescription.ContainsKey(message.Type);
-                //if (message.Type == MessageType.Binary && Context.OnMessageBinaryCome.TryGetValue(message.ChatId, out var action))
-                //    action.Invoke(message); // Raise an event for plugins listening for binary data
-
                 if (!message.Encrypted) // Incoming messages without encryption are ignored
-                {
-                    // Only the server can process non-encrypted messages for particular purposes, for example when you want to receive communication from a client not in the contacts directory, or when the data is already encrypted and does not require further encryption
-                    if (!Context.IsServer && !isViewable) return;
-                    ExecuteCommand(chatId, message);
+                {                    
+                    if (!isViewable)
+                        ExecuteCommand(chatId, message);
                 }
                 else // Only encrypted messages are taken into consideration, they have been validated by verifying the digital signature
                 {
@@ -236,8 +232,10 @@ namespace EncryptedMessaging
         public void SendMessage(MessageType type, byte[] data, Contact toContact, ulong? replyToPostId = null, ulong? chatId = null, ulong[] toIdUsers = null, bool directlyWithoutSpooler = false, bool encrypted = true, bool isLogin = false)
         {
 #if DEBUG
-    if (isLogin== true && type != MessageType.Contact)
+            if (isLogin == true && type != MessageType.Contact)
                 Debugger.Break(); // The isLogin flag can only be used for the login method
+            //if (toContact.IsServer == false && encrypted == false)
+            //    Debugger.Break(); // Client are not allow to received not encripted data (The encrypted data gives us the certainty of who is sending them since the post has a digital signature)
 #endif
             SendMessage(new SendMessageParameters()
             {
@@ -426,12 +424,13 @@ namespace EncryptedMessaging
         /// Send array of bytes, not exceeding 255 bytes
         /// To read the data on the target client: var values = Functions.SplitData(data);
         /// </summary>
+        /// <param name="cloud">Cloud contact</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
         /// <param name="values">Data blocks not exceeding 255 bytes each</param>
-        public void SendSmallDataToCloud(bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values)
+        public void SendSmallDataToCloud(Contact cloud, bool directlyWithoutSpooler = false, bool encrypted = true, params byte[][] values)
         {
-            SendSmallData(Context.Contacts.GetCloudContact(), directlyWithoutSpooler, encrypted, values);
+            SendSmallData(cloud, directlyWithoutSpooler, encrypted, values);
         }
 
         /// <summary>
@@ -470,23 +469,25 @@ namespace EncryptedMessaging
         /// Sends a sequence of key-values, where the key is a byte and the value is an array of max 256 bytes
         /// To read the data on the target client: var values = Functions.SplitData(data);
         /// </summary>
+        /// <param name="toContact">The recipient</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="keyValue">Data blocks not exceeding 255 bytes each</param>
-        public void SendKeyValueCollectionToCloud(bool directlyWithoutSpooler = false, params Tuple<byte, byte[]>[] keyValue)
+        public void SendKeyValueCollectionToCloud(Contact toContact, bool directlyWithoutSpooler = false, params Tuple<byte, byte[]>[] keyValue)
         {
-            SendKeyValueCollection(Context.Contacts.GetCloudContact(), directlyWithoutSpooler, keyValue);
+            SendKeyValueCollection(toContact, directlyWithoutSpooler, keyValue);
         }
 
         /// <summary>
         /// Sends a sequence of key-values, where the key is a byte and the value is an array of bytes
         /// To read the data on the target client: var values = Functions.SplitData(data);
         /// </summary>
+        /// <param name="toContact">The recipient</param>
         /// <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
         /// <param name="valueMustBeLessOf256Bytes">Limits the length of the saved values by saving communication bandwidth for data which is generally small</param>
         /// <param name="keyValue">Data blocks, not exceeding 255 bytes each, if specified by the valueMustBeLessOf256Bytes parameter</param>
-        public void SendKeyValueCollectionToCloud(bool directlyWithoutSpooler = false, bool valueMustBeLessOf256Bytes = false, params Tuple<byte, byte[]>[] keyValue)
+        public void SendKeyValueCollectionToCloud(Contact toContact, bool directlyWithoutSpooler = false, bool valueMustBeLessOf256Bytes = false, params Tuple<byte, byte[]>[] keyValue)
         {
-            SendKeyValueCollection(Context.Contacts.GetCloudContact(), directlyWithoutSpooler, valueMustBeLessOf256Bytes, keyValue);
+            SendKeyValueCollection(toContact, directlyWithoutSpooler, valueMustBeLessOf256Bytes, keyValue);
         }
 
         /// <summary>
@@ -653,7 +654,7 @@ namespace EncryptedMessaging
         public void SendCommandToSubApplication(Contact toContact, ushort appId, ushort command, bool directlyWithoutSpooler = false, bool encrypted = true, byte[] data = null)
         {
             if (data == null)
-                data = new byte[0];
+                data = Array.Empty<byte>();
             SendMessage(MessageType.SubApplicationCommandWithData, data.Combine(BitConverter.GetBytes(appId), BitConverter.GetBytes(command)), toContact, null, null, null, directlyWithoutSpooler, encrypted);
         }
 
@@ -680,7 +681,7 @@ namespace EncryptedMessaging
         }
 
 
-        public  void SendPushNotification(string deviceToken, ulong chatId, bool isVideo, string contactNameOrigin)
+        public void SendPushNotification(string deviceToken, ulong chatId, bool isVideo, string contactNameOrigin)
         {
             Context.CloudManager?.SendPushNotification(deviceToken, chatId, isVideo, contactNameOrigin);
         }

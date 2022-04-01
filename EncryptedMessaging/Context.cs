@@ -42,9 +42,7 @@ namespace EncryptedMessaging
                 System.Diagnostics.Debugger.Break(); // Set up cloud path functions for server applications only
 #endif
 
-#if DEBUG_RAM
-            privateKeyOrPassphrase = "engage lizard foam just reform way agent silver equip stomach imitate spike";
-#endif
+
             //Cloud.ReceiveCloudCommands.SetCustomPath(cloudPath, isServer);
             EntryPoint = new UriBuilder(entryPoint).Uri;
             Contact.RuntimePlatform runtimePlatform = Contact.RuntimePlatform.Undefined;
@@ -78,7 +76,7 @@ namespace EncryptedMessaging
             MessageFormat = new MessageFormat(this);
             SecureStorage = new SecureStorage.Initializer(Instances.ToString(), getSecureKeyValue, setSecureKeyValue);
 #if DEBUG_RAM
-            SecureStorage.Destroy();
+            //SecureStorage.Destroy();
 #endif
             Setting = new Setting(this);
             Repository = new Repository(this);
@@ -99,6 +97,7 @@ namespace EncryptedMessaging
             if (Instances == 0)
                 new Task(() => _ = Time.CurrentTimeGMT).Start();
             IsRestored = !string.IsNullOrEmpty(privateKeyOrPassphrase);
+
             ThreadPool.QueueUserWorkItem(new WaitCallback(RunAfterInstanceCreate));
         }
         /// <summary>
@@ -229,7 +228,7 @@ namespace EncryptedMessaging
             OnConnectivityChange(_internetAccess);
             // Put here only instructions that send messages
 #if DEBUG_RAM
-            //Contacts.RestoreContactFromCloud();
+            Contacts.RestoreContactFromCloud();
 #endif
             if (!IsRestored)
                 My.CheckUpdateTheNotificationKeyToMyContacts();

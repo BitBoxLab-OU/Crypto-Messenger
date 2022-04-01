@@ -77,6 +77,17 @@ namespace EncryptedMessaging
 			}
 		}
 
+
+		static public int BytesCompare(IList<byte> x, IList<byte> y)
+		{
+			for (var index = 0; index < Math.Min(x.Count, y.Count); index++)
+			{
+				var result = x[index].CompareTo(y[index]);
+				if (result != 0) return result;
+			}
+			return x.Count.CompareTo(y.Count);
+		}
+
 		/// <summary>
 		/// Set the date to relative  if same return null.
 		/// </summary>

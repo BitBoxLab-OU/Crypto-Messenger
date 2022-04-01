@@ -262,7 +262,7 @@ namespace EncryptedMessaging
         public byte[] GetAvatar()
         {
             var png = Context.SecureStorage.DataStorage.LoadData("avatar");
-            return png;
+            return png?? Array.Empty<byte>();
         }
 
         /// <summary>
@@ -273,7 +273,7 @@ namespace EncryptedMessaging
         {
             Context.SecureStorage.DataStorage.SaveData(png, "avatar");
             var encryptedPng = Functions.Encrypt(png, GetPublicKeyBinary()); // The avatar is public but is encrypted using the contact's public key as a password, in this way it can only be decrypted by users who have this contact in the address book
-            Context.CloudManager?.SaveDataOnCloud("", "Avatar", encryptedPng); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
+            Context.CloudManager?.SaveDataOnCloud("Avatar", GetId().ToString(CultureInfo.InvariantCulture), encryptedPng); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
             Context.Contacts.ForEachContact(contact =>
             {
                 if ((DateTime.Now.ToLocalTime() - contact.LastMessageTime).TotalDays < 30) // To avoid creating too much traffic on the network, the information on the avatar update is sent only to those who have sent us messages in the last 30 days

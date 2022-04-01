@@ -75,7 +75,7 @@ namespace EncryptedMessaging
         /// <returns>Returns the date of arrival of the oldest message processed by the function. Use this value to page further requests by passing the "receprionAntecedent" parameter.</returns>
         public DateTime ReadPosts(ulong chatId, Action<byte[], DateTime> action = null, DateTime receprionAntecedent = default, int? take = null, List<DateTime> exclude = null)
         {
-            DateTime olderPost = DateTime.MaxValue;
+            var olderPost = DateTime.MaxValue;
             var path = ChatPath(chatId);
             if (Directory.Exists(path))
             {

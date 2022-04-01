@@ -11,6 +11,7 @@
     <NeutralLanguage>en</NeutralLanguage>
     <DebugType>portable</DebugType>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DEBUG_A|AnyCPU'">
     <DebugType></DebugType>

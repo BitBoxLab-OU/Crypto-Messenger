@@ -142,7 +142,7 @@ namespace EncryptedMessaging
                 parameters = default;
                 return false;
             }
-            GetSubApplicationCommandWithData(out appId, out command, out byte[] data);
+            GetSubApplicationCommandWithData(out appId, out command, out var data);
             parameters = Functions.SplitData(data, false);
             return true;
         }

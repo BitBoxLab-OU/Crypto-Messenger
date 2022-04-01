@@ -79,7 +79,7 @@ namespace CommunicationChannel
         /// </summary>
         public readonly int Domain;
         internal void OnDataReceives(byte[] incomingData, out Tuple<Tcp.ErrorType, string> error, bool directlyWithoutSpooler)
-        {
+        {  
             if (incomingData.Length == 0)
             {
                 error = Tuple.Create(Tcp.ErrorType.WrondDataLength, null as string);

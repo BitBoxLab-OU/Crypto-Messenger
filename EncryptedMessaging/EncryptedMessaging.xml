@@ -1036,21 +1036,10 @@
             <param name="nameless">boolean</param>
             <returns></returns>
         </member>
-        <member name="F:EncryptedMessaging.Contacts.CloudPubKey">
-             <summary>
-            Public key for cloud. 
-             </summary>
-        </member>
         <member name="F:EncryptedMessaging.Contacts.CloudUserId">
             <summary>
             set unsigned integer value for cloud user id.
             </summary>
-        </member>
-        <member name="M:EncryptedMessaging.Contacts.GetCloudContact">
-            <summary>
-            If the contact is null on cloud, then it is stored on the cloud server.
-            </summary>
-            <returns></returns>
         </member>
         <member name="T:EncryptedMessaging.Context">
             <summary>
@@ -1875,11 +1864,12 @@
             <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
             <param name="values">Data blocks not exceeding 255 bytes each</param>
         </member>
-        <member name="M:EncryptedMessaging.Messaging.SendSmallDataToCloud(System.Boolean,System.Boolean,System.Byte[][])">
+        <member name="M:EncryptedMessaging.Messaging.SendSmallDataToCloud(EncryptedMessaging.Contact,System.Boolean,System.Boolean,System.Byte[][])">
             <summary>
             Send array of bytes, not exceeding 255 bytes
             To read the data on the target client: var values = Functions.SplitData(data);
             </summary>
+            <param name="cloud">Cloud contact</param>
             <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
             <param name="encrypted">Clients are only able to receive encrypted messages. Non-encrypted messages are reserved for communications with cloud servers if the data is already encrypted and does not require a second encryption and if the message must be delivered to a server that does not have the client in the address book and therefore could not otherwise read it</param>
             <param name="values">Data blocks not exceeding 255 bytes each</param>
@@ -1903,19 +1893,21 @@
             <param name="valueMustBeLessOf256Bytes">If true: Ideal for saving values no larger than 256 bytes</param>
             <param name="keyValue">Data blocks of data</param>
         </member>
-        <member name="M:EncryptedMessaging.Messaging.SendKeyValueCollectionToCloud(System.Boolean,System.Tuple{System.Byte,System.Byte[]}[])">
+        <member name="M:EncryptedMessaging.Messaging.SendKeyValueCollectionToCloud(EncryptedMessaging.Contact,System.Boolean,System.Tuple{System.Byte,System.Byte[]}[])">
             <summary>
             Sends a sequence of key-values, where the key is a byte and the value is an array of max 256 bytes
             To read the data on the target client: var values = Functions.SplitData(data);
             </summary>
+            <param name="toContact">The recipient</param>
             <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
             <param name="keyValue">Data blocks not exceeding 255 bytes each</param>
         </member>
-        <member name="M:EncryptedMessaging.Messaging.SendKeyValueCollectionToCloud(System.Boolean,System.Boolean,System.Tuple{System.Byte,System.Byte[]}[])">
+        <member name="M:EncryptedMessaging.Messaging.SendKeyValueCollectionToCloud(EncryptedMessaging.Contact,System.Boolean,System.Boolean,System.Tuple{System.Byte,System.Byte[]}[])">
             <summary>
             Sends a sequence of key-values, where the key is a byte and the value is an array of bytes
             To read the data on the target client: var values = Functions.SplitData(data);
             </summary>
+            <param name="toContact">The recipient</param>
             <param name="directlyWithoutSpooler">If this parameter is true, the data will be sent immediately without any reception check, if the recipient is not on-line they will be lost</param>
             <param name="valueMustBeLessOf256Bytes">Limits the length of the saved values by saving communication bandwidth for data which is generally small</param>
             <param name="keyValue">Data blocks, not exceeding 255 bytes each, if specified by the valueMustBeLessOf256Bytes parameter</param>

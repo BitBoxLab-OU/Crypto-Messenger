@@ -86,6 +86,8 @@ namespace EncryptedMessaging
         {
             // the response are processed in class ProcessResponsesFromCloud
             Context.CloudManager?.LoadDataFromCloud("String", "MyName"); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
+            Context.CloudManager?.LoadDataFromCloud("", "Avatar"); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
+
             Context.CloudManager?.LoadAllDataFromCloud("Contact"); // Cloud.SendCloudCommands.GetAllObject(Context, "Contact");            
         }
 
@@ -135,6 +137,9 @@ namespace EncryptedMessaging
                     ContactsList.Add(contact);
                 
             }
+#if DEBUG_RAM
+            //onlyServer = false;
+#endif
             if (!Context.My.IsServer && !onlyServer)
             {
                 RefreshSuspend = true;
@@ -154,7 +159,7 @@ namespace EncryptedMessaging
                 });
                 RefreshSuspend = false;
 
-#if DEBUG || DEBUG_A || DEBUG_B
+#if (DEBUG || DEBUG_A || DEBUG_B) && DEBUG_RAM==false
                 if (ContactsList.ToList().Find((x) => x.Name == "Random User") == null)
                     ContactsList.Add(new Contact(Context, participants: new List<byte[]>() { new CryptoServiceProvider().ExportCspBlob(false) }, "Random User"));
                 if (Context.ContactConverter.PublicKeysToParticipants("An7tQNorwxKrg7H9wseMShCTl79hSH5g8wy+njNvpSrP", out List<byte[]> testUser))
@@ -171,7 +176,9 @@ namespace EncryptedMessaging
                 {
                     var name = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthNames[i] + " User";
                     if (ContactsList.ToList().Find((x) => x.Name == name) == null)
+                    {
                         ContactsList.Add(new Contact(Context, participants: new List<byte[]>() { new CryptoServiceProvider().ExportCspBlob(false) }, name));
+                    }
                 }
 #endif
 #if DEBUG_A
@@ -188,8 +195,7 @@ namespace EncryptedMessaging
                     addContact(contact);
                 }
 #endif
-            }
-            addContact(GetCloudContact());
+                    }
             SortContacts(true);
             ForEachContact(contact => contact.RefreshReadedInfoInUI());
         }
@@ -777,27 +783,9 @@ namespace EncryptedMessaging
         //#else
 
         /// <summary>
-        ///Public key for cloud. 
-        /// </summary>
-        public static string CloudPubKey = @"ApkrRQUe7qbaKY05Lbs5z+o001UNzXlfHgm+9KEN41vE";
-
-        /// <summary>
         /// set unsigned integer value for cloud user id.
         /// </summary>
         public static ulong CloudUserId;
         //#endif
-        /// <summary>
-        /// If the contact is null on cloud, then it is stored on the cloud server.
-        /// </summary>
-        /// <returns></returns>
-        public Contact GetCloudContact()
-        {
-            if (_cloud == null)
-            {
-                Context.ContactConverter.PublicKeysToParticipants(CloudPubKey, out List<byte[]> serverUser);
-                _cloud = new Contact(Context, serverUser, "Server", "en", isServer: true);
-            }
-            return _cloud;
-        }
     }
 }

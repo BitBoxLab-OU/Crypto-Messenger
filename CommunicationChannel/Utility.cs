@@ -35,7 +35,7 @@ namespace CommunicationChannel
 		{
 			void xor(byte[] a, byte[] b)
 			{
-				for (int i = 0; i < a.Length; i++)
+				for (var i = 0; i < a.Length; i++)
 					a[i] ^= b[i];
 			}
 			var result = BitConverter.GetBytes(data.Length).Combine(new byte[28]);

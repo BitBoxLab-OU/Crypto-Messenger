@@ -101,10 +101,10 @@ namespace EncryptedMessaging
             get => string.IsNullOrEmpty(_name) ? Pseudonym() : _name;
             set
             {
+                var newName = Functions.FirstUpper(value);
+                if (newName == Name) return;
                 if (Context != null && IsGroup)
                     Debugger.Break(); // The group name cannot be changed
-                var newName = Functions.FirstUpper(value);
-                if (_name == newName) return;
                 _name = newName;
                 if (Context == null) return;
                 OnPropertyChanged(nameof(Name));
@@ -137,32 +137,32 @@ namespace EncryptedMessaging
         /// Represents an ARGB (alpha, red, green, blue) color.
         /// </summary>
         [XmlIgnore]
-        
+
         public System.Drawing.Color LightColor;
         /// <summary>
         /// Represents an ARGB (alpha, red, green, blue) color.
         /// </summary>
-       
+
         [XmlIgnore]
         public System.Drawing.Color DarkColor;
         /// <summary>
         /// Convert color to hex.
         /// </summary>
-        
+
         [XmlIgnore]
         public string LightColorAsHex => $"#{LightColor.R:X2}{LightColor.G:X2}{LightColor.B:X2}";
         /// <summary>
         /// Convert color to hex.
         /// </summary>
-        
+
         [XmlIgnore]
         public string DarkColorAsHex => $"#{DarkColor.R:X2}{DarkColor.G:X2}{DarkColor.B:X2}";
-        
+
         /// <summary>
         /// Language used for this contact.
         /// </summary>
         public string Language; // 2 character to indicate the language used for this contact, for example EN, IT, etc..
-        
+
         /// <summary>
         /// Operating system in use for runtime application.
         /// </summary>
@@ -176,7 +176,7 @@ namespace EncryptedMessaging
             /// Undefined
             /// </summary>
             Undefined,
-            
+
             /// <summary>
             /// Andriod
             /// </summary>
@@ -186,17 +186,17 @@ namespace EncryptedMessaging
             ///IOS 
             /// </summary>
             iOS,
-            
+
             /// <summary>
             /// Windows
             /// </summary>
             Windows,
-            
+
             /// <summary>
             /// Universal windows platform
             /// </summary>
             UWP,
-            
+
             /// <summary>
             /// Unix
             /// </summary>
@@ -211,11 +211,11 @@ namespace EncryptedMessaging
         /// Set assumed Pseudonyms for the participants in the group.
         /// </summary>
         /// <returns></returns>
-        public string Pseudonym() => Context.Contacts.Pseudonym(Participants);
+        public string Pseudonym() =>  Context?.Contacts.Pseudonym(Participants);
         private string _publicKeys;
-       /// <summary>
-       /// Check if public key exists
-       /// </summary>
+        /// <summary>
+        /// Check if public key exists
+        /// </summary>
         public string PublicKeys
         {
             get => _publicKeys;
@@ -335,17 +335,17 @@ namespace EncryptedMessaging
             OnPropertyChanged(nameof(LastMessageTimeText));
             OnPropertyChanged(nameof(LastMessageTimeDistance));
         }
-        
+
         /// <summary>
         /// Date of the last message time of the user.
         /// </summary>
         public DateTime LastNotMyMessageTime;
-        
-        
+
+
         public DateTime LastNotMyMessageTimeAtSendLastReading;
 
         private string _oldLastMessageTimeDistance;
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -380,7 +380,7 @@ namespace EncryptedMessaging
         [XmlIgnore]
         public List<byte[]> Participants { get; private set; }
         private bool _isBlocked;
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -400,12 +400,12 @@ namespace EncryptedMessaging
         /// 
         /// </summary>
         public bool ImBlocked { get; set; }
-        
+
         /// <summary>
         /// 
         /// </summary>
         public bool IsMuted { get; set; }
-        
+
         /// <summary>
         /// 
         /// </summary>
@@ -421,12 +421,12 @@ namespace EncryptedMessaging
         /// </summary>
         [XmlIgnore]
         public bool IsVisible => !IsServer;
-        
+
         /// <summary>
         /// 
         /// </summary>
         [XmlIgnore]
-        public bool IsServer = false;
+        public bool IsServer;
         internal void UpdateLastReaded(ulong idParticipant, DateTime dateTime)
         {
             lock (RemoteReadedList)
@@ -467,12 +467,12 @@ namespace EncryptedMessaging
             /// Message information function for creation and dataId.
             /// </summary>
             public MessageInfo() { }
-            
+
             /// <summary>
             /// Integer data type for when a message is created
             /// </summary>
             public long Creation;
-            
+
             /// <summary>
             /// unsigned integer data id.
             /// </summary>
@@ -494,14 +494,14 @@ namespace EncryptedMessaging
         }
 
         private List<RemoteReaded> _remoteReadedList = new List<RemoteReaded>();
-       
+
         /// <summary>
         /// Add new timestamp to to the list.
         /// </summary>
         public RemoteReaded[] RemoteReadedList { get => _remoteReadedList.ToArray(); set => _remoteReadedList = new List<RemoteReaded>(value); }
-       /// <summary>
-       /// Add a timestamp to the message.
-       /// </summary>
+        /// <summary>
+        /// Add a timestamp to the message.
+        /// </summary>
         public class RemoteReaded
         {
             /// <summary>
@@ -520,7 +520,7 @@ namespace EncryptedMessaging
             /// integer value for time.
             /// </summary>
             public long TimeStamp;
-            
+
             /// <summary>
             /// Update the timestamp on the message.
             /// </summary>
@@ -597,7 +597,7 @@ namespace EncryptedMessaging
         /// Get the preview of last message.
         /// </summary>
         public string LastMessagePreview { get; set; } // Do not use this parameter to set. To set use SetLastMessagePreview. This is public only for deserialization purposes
-        
+
         /// <summary>
         /// Boolean check for last message.
         /// </summary>
@@ -607,12 +607,12 @@ namespace EncryptedMessaging
         /// </summary>
         [XmlIgnore]
         public uint RemoteUnreaded { get; internal set; }
-        
+
         /// <summary>
         /// Integer value for last message font attributes.
         /// </summary>
         public int LastMessageFontAttributes { get; set; }
-        
+
         /// <summary>
         /// Integer value of the Chat Id.
         /// </summary>
@@ -624,9 +624,9 @@ namespace EncryptedMessaging
         [XmlIgnore]
         public ulong? UserId { get; private set; } // This value is set only if it is not a group, and is used to identify a single user
         internal string _firebaseToken;
-       /// <summary>
-       /// Get the fire base token value and save it.
-       /// </summary>
+        /// <summary>
+        /// Get the fire base token value and save it.
+        /// </summary>
         public string FirebaseToken
         {
             get
@@ -642,7 +642,7 @@ namespace EncryptedMessaging
             }
         }
         internal string _deviceToken;
-        
+
         /// <summary>
         ///Return and save the device token. 
         /// </summary>
@@ -682,12 +682,15 @@ namespace EncryptedMessaging
 
         internal void RequestAvatarUpdate()
         {
-            // Load avatars from cloud
-            if (IsGroup) return;
-            var currentAvatar = Avatar;
-            var avatarSize = currentAvatar?.Length ?? 0;
-            if ((DateTime.UtcNow - LastMessageTime).TotalDays <= 30) // Update the avatars only of those I had a recent conversation, so as not to create traffic on the server
-                Context.CloudManager?.LoadDataFromCloud("Avatar", UserId.ToString(), avatarSize, true); //               Cloud.SendCloudCommands.GetAvatar(Context, (ulong)UserId, avatarSize);
+            if (!Context.My.IsServer)
+            {
+                // Load avatars from cloud
+                if (IsGroup) return;
+                var currentAvatar = Avatar;
+                var avatarSize = currentAvatar?.Length ?? 0;
+                if ((DateTime.UtcNow - LastMessageTime).TotalDays <= 30) // Update the avatars only of those I had a recent conversation, so as not to create traffic on the server
+                    Context.CloudManager?.LoadDataFromCloud("Avatar", UserId.ToString(), avatarSize, true); //               Cloud.SendCloudCommands.GetAvatar(Context, (ulong)UserId, avatarSize);
+            }
         }
 
         /// <summary>
@@ -701,8 +704,11 @@ namespace EncryptedMessaging
             if (!cloudBackup) return;
             var data = ContactMessage.GetDataMessageContact(this, Context, !IsGroup, !IsGroup);
             data = SecureStorage.Cryptography.Encrypt(data, Context.My.Csp.ExportCspBlob(true));
-            Context.CloudManager?.SaveDataOnCloud("Contact", ChatId.ToString(), data); // Cloud.SendCloudCommands.PostObject(Context, "Contact", ChatId.ToString(), data);
-            RequestAvatarUpdate();
+            if (!Context.My.IsServer)
+            {
+                Context.CloudManager?.SaveDataOnCloud("Contact", ChatId.ToString(), data); // Cloud.SendCloudCommands.PostObject(Context, "Contact", ChatId.ToString(), data);
+                RequestAvatarUpdate();
+            }
         }
 
         internal Contact Load(ulong chatId) => Load(chatId);
@@ -768,7 +774,7 @@ namespace EncryptedMessaging
         /// </summary>
         [XmlIgnore]
         public object MessageContainerUI { get; set; }
-       
+
         /// <summary>
         /// Get thr QR code string for the context.
         /// </summary>

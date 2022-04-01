@@ -22,7 +22,7 @@ namespace CommunicationChannel
 		{
 			if (Channel.IsoStoreage.FileExists(HashFile))
 				using (var stream = new IsolatedStorageFileStream(HashFile, FileMode.Open, FileAccess.Read, Channel.IsoStoreage))
-					for (int i = 0; i < (int)stream.Length; i += 4)
+					for (var i = 0; i < (int)stream.Length; i += 4)
 					{
 						var data = new byte[stream.Length];
 						stream.Read(data, i, 4);
@@ -63,7 +63,7 @@ namespace CommunicationChannel
 		{
 			lock (HashList)
 				using (var stream = new IsolatedStorageFileStream(HashFile, FileMode.Create, FileAccess.Write, Channel.IsoStoreage))
-					foreach (byte[] item in HashList)
+					foreach (var item in HashList)
 						stream.Write(item, 0, 4);
 		}
 	}

@@ -92,7 +92,7 @@ namespace CommunicationChannel
 			{
 				lock (_inQuee)
 				{
-					Tuple<uint, int> toRemove = _inQuee.Find(x => x.Item1 == dataId);
+					var toRemove = _inQuee.Find(x => x.Item1 == dataId);
 					if (toRemove != null)
 					{
 						var progressive = toRemove.Item2;
@@ -108,7 +108,7 @@ namespace CommunicationChannel
 		private void SaveQueelist()
 		{
 			using (var stream = new IsolatedStorageFileStream(_queueListName, FileMode.Create, FileAccess.Write, Channel.IsoStoreage))
-				foreach (Tuple<uint, int> item in _inQuee)
+				foreach (var item in _inQuee)
 					stream.Write(item.Item2.GetBytes(), 0, 4);
 		}
 		/// <summary>
@@ -145,7 +145,7 @@ namespace CommunicationChannel
 			Action action = null;
 			lock (ExecuteOnConfirmReceipt)
 			{
-				Tuple<uint, Action> tuple = ExecuteOnConfirmReceipt.Find(x => x.Item1 == dataId);
+				var tuple = ExecuteOnConfirmReceipt.Find(x => x.Item1 == dataId);
 				if (tuple != null)
 				{
 					ExecuteOnConfirmReceipt.Remove(tuple);

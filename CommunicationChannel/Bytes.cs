@@ -43,9 +43,9 @@ public static class Bytes
     ///<inheritdoc cref="Combine(byte[], byte[], byte[][])"/>
     public static byte[] Combine(params byte[][] arrays)
     {
-        byte[] rv = new byte[arrays.Sum(a => a.Length)];
-        int offset = 0;
-        foreach (byte[] array in arrays)
+        var rv = new byte[arrays.Sum(a => a.Length)];
+        var offset = 0;
+        foreach (var array in arrays)
         {
             Buffer.BlockCopy(array, 0, rv, offset, array.Length);
             offset += array.Length;
@@ -60,11 +60,11 @@ public static class Bytes
     /// <returns>Split data List</returns>
     public static List<byte[]> Split(this byte[] data)
     {
-        int offset = 0;
+        var offset = 0;
         var datas = new List<byte[]>();
         while (offset < data.Length)
         {
-            ushort len = BitConverter.ToUInt16(data, offset);
+            var len = BitConverter.ToUInt16(data, offset);
             offset += 2;
             var part = new byte[len];
             Buffer.BlockCopy(data, offset, part, 0, len);
@@ -132,7 +132,7 @@ public static class Bytes
     public static string ToHex(this byte[] bytes)
     {
         var hex = new System.Text.StringBuilder(bytes.Length * 2);
-        foreach (byte b in bytes)
+        foreach (var b in bytes)
             hex.AppendFormat("{0:x2}", b);
         return hex.ToString();
     }
@@ -154,9 +154,9 @@ public static class Bytes
     /// <returns>byte array</returns>
     public static byte[] HexToBytes(this string hex)
     {
-        int NumberChars = hex.Length;
-        byte[] bytes = new byte[NumberChars / 2];
-        for (int i = 0; i < NumberChars; i += 2)
+        var NumberChars = hex.Length;
+        var bytes = new byte[NumberChars / 2];
+        for (var i = 0; i < NumberChars; i += 2)
             bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
         return bytes;
     }

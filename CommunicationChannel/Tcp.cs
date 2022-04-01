@@ -63,7 +63,7 @@ namespace CommunicationChannel
         {
             try
             {
-                NetworkStream stream = Client?.GetStream();
+                var stream = Client?.GetStream();
                 stream?.Write(new byte[] { 0, 0, 0, 0 }, 0, 4);
                 stream?.Flush();
             }
@@ -170,7 +170,7 @@ namespace CommunicationChannel
                 {
                     lock (Client)
                     {
-                        NetworkStream stream = Client.GetStream();
+                        var stream = Client.GetStream();
                         var mask = 0b10000000_00000000_00000000_00000000;
                         var lastBit = directlyWithoutSpooler ? mask : 0;
                         var lengt = (uint)dataLength | lastBit;
@@ -203,8 +203,8 @@ namespace CommunicationChannel
             {
                 if (!IsConnected() && Channel.InternetAccess)
                 {
-                    GetPorts(out List<int> ports);
-                    StartLinger(ports, out Exception exception);
+                    GetPorts(out var ports);
+                    StartLinger(ports, out var exception);
                     if (exception != null)
                     {
                         Channel.OnTcpError(ErrorType.ConnectionFailure, exception.Message);
@@ -242,11 +242,11 @@ namespace CommunicationChannel
             exception = null;
             foreach (var port in ports)
             {
-                foreach (IPAddress address in Dns.GetHostAddresses(Channel.ServerUri.Host).Reverse())
+                foreach (var address in Dns.GetHostAddresses(Channel.ServerUri.Host).Reverse())
                 {
                     try
                     {
-                        IPAddress ip = address;
+                        var ip = address;
                         //Client = new TcpClient(ip.ToString(), port)
                         Client = new TcpClient()
                         {
@@ -351,7 +351,7 @@ namespace CommunicationChannel
         private void ReadBytes(int lengthIncomingData, NetworkStream stream, bool directlyWithoutSpooler)
         {
             ToRead = lengthIncomingData;
-            DateTime timerStarted = _timerStartedTime;
+            var timerStarted = _timerStartedTime;
             SuspendAutoDisconnectTimer();
             byte[] data;
             try
@@ -380,7 +380,7 @@ namespace CommunicationChannel
                 Channel.Spooler.OnConfirmReceipt(dataId);
             }
             //count += 1;
-            Channel.OnDataReceives(data, out Tuple<ErrorType, string> error, directlyWithoutSpooler);
+            Channel.OnDataReceives(data, out var error, directlyWithoutSpooler);
             if (error != null)
             {
                 Debugger.Break(); //something went wrong!
