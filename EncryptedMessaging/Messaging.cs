@@ -305,7 +305,7 @@ namespace EncryptedMessaging
             {
                 var localStorageTime = DateTime.UtcNow;
                 //Prepare the plain-text message to view
-                var message = new Message(Context, @params.ToContact, @params.Type, Context.My.Csp.ExportCspBlob(false), creationDate, @params.Data, localStorageTime, Repository.PostId(dataPost), @params.Encrypted, @params.ToContact.ChatId, Context.My.GetId())
+                var message = new Message(Context, @params.ToContact, @params.Type, Context.My.Csp.ExportCspBlob(false), creationDate, @params.Data, localStorageTime, Repository.PostId(dataPost), @params.Encrypted, @params.ToContact.ChatId, Context.My.Id)
                 {
                     ReplyToPostId = @params.ReplyToPostId
                 };

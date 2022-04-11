@@ -68,7 +68,7 @@ namespace EncryptedMessaging
                 if (contactKey != null)
                     UserId = GetUserId(contactKey);
                 else if (myKey != null)
-                    UserId = Context.My.GetId();
+                    UserId = Context.My.Id;
             }
             Context.Contacts.Colors(Participants, out LightColor, out DarkColor);
         }

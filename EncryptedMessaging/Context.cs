@@ -93,7 +93,7 @@ namespace EncryptedMessaging
             Messaging = new Messaging(this, multipleChatModes);
             Contacts = new Contacts(this);
             var keepConnected = runtimePlatform != Contact.RuntimePlatform.Android && runtimePlatform != Contact.RuntimePlatform.iOS;
-            Channel = new Channel(entryPoint, Domain, () => IsReady, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.GetId(), isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
+            Channel = new Channel(entryPoint, Domain, () => IsReady, Messaging.ExecuteOnDataArrival, Messaging.OnDataDeliveryConfirm, My.Id, isServer || keepConnected ? Timeout.Infinite : 120 * 1000); // *1* // If you change this value, it must also be changed on the server			
             if (Instances == 0)
                 new Task(() => _ = Time.CurrentTimeGMT).Start();
             IsRestored = !string.IsNullOrEmpty(privateKeyOrPassphrase);
@@ -228,12 +228,12 @@ namespace EncryptedMessaging
             OnConnectivityChange(_internetAccess);
             // Put here only instructions that send messages
 #if DEBUG_RAM
-            Contacts.RestoreContactFromCloud();
+            //Contacts.RestoreMyContactFromCloud();
 #endif
             if (!IsRestored)
                 My.CheckUpdateTheNotificationKeyToMyContacts();
             else if (!IsServer)
-                Contacts.RestoreContactFromCloud();
+                Contacts.RestoreMyContactFromCloud();
         }
 
         /// <summary>

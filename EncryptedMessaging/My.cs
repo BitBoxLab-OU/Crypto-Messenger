@@ -110,10 +110,16 @@ namespace EncryptedMessaging
         public byte[] GetPrivatKeyBinary() => Csp.ExportCspBlob(true);
 
         /// <summary>
-        /// Get the unisgned long integer User Id from the CSP byte array.
+        /// My user id (deprecated).
         /// </summary>
         /// <returns></returns>
+        [Obsolete("This method is deprecated, please use Id instead.")]
         public ulong GetId() => ContactConverter.GetUserId(Csp.ExportCspBlob(false));
+
+        /// <summary>
+        /// My user id.
+        /// </summary>
+        public ulong Id => ContactConverter.GetUserId(Csp.ExportCspBlob(false));
 
         private string _name;
         /// <summary>
@@ -155,8 +161,11 @@ namespace EncryptedMessaging
                 Context.SecureStorage.Values.Set("MyName", _name);
                 if (saveToCloud)
                     BackupToCloud();
+                OnNameChanged?.Invoke(_name);
             }
         }
+
+        public event Action<string> OnNameChanged;
 
         private string _firebaseToken;
         /// <summary>
@@ -262,24 +271,30 @@ namespace EncryptedMessaging
         public byte[] GetAvatar()
         {
             var png = Context.SecureStorage.DataStorage.LoadData("avatar");
-            return png?? Array.Empty<byte>();
+            return png ?? Array.Empty<byte>();
         }
 
         /// <summary>
         /// Sets the avatar (the image of the user photo in the form of a byte array)
         /// </summary>
         /// <param name="png"></param>
-        public void SetAvatar(byte[] png)
+        /// <param name="saveToCloud">Save the avatar to cloud (if the library use a cloud)</param>
+        public void SetAvatar(byte[] png, bool saveToCloud = true)
         {
             Context.SecureStorage.DataStorage.SaveData(png, "avatar");
             var encryptedPng = Functions.Encrypt(png, GetPublicKeyBinary()); // The avatar is public but is encrypted using the contact's public key as a password, in this way it can only be decrypted by users who have this contact in the address book
-            Context.CloudManager?.SaveDataOnCloud("Avatar", GetId().ToString(CultureInfo.InvariantCulture), encryptedPng); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);             
-            Context.Contacts.ForEachContact(contact =>
+            if (saveToCloud && Context.CloudManager != null)
             {
-                if ((DateTime.Now.ToLocalTime() - contact.LastMessageTime).TotalDays < 30) // To avoid creating too much traffic on the network, the information on the avatar update is sent only to those who have sent us messages in the last 30 days
-                    Context.Messaging.SendInfo(MessageFormat.InformType.AvatarHasUpdated, contact);
-            });
+                Context.CloudManager.SaveDataOnCloud("Avatar", Id.ToString(CultureInfo.InvariantCulture), encryptedPng, true); // Cloud.SendCloudCommands.PostAvatar(Context, encryptedPng);                         
+                Context.Contacts.ForEachContact(contact =>
+                {
+                    if ((DateTime.Now.ToLocalTime() - contact.LastMessageTime).TotalDays < 30) // To avoid creating too much traffic on the network, the information on the avatar update is sent only to those who have sent us messages in the last 30 days
+                        Context.Messaging.SendInfo(MessageFormat.InformType.AvatarHasUpdated, contact);
+                });
+            }
+            OnAvatarChanged?.Invoke(png);
         }
+        public event Action<byte[]> OnAvatarChanged;
 
         internal const int AntispamCloud = 3;
         /// <summary>

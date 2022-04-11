@@ -80,14 +80,13 @@ namespace EncryptedMessaging
         }
 
         /// <summary>
-        /// This Fucktion is used to restore a contact from the cloud storage.
+        /// This function is used to restore a contact from the cloud storage.
         /// </summary>
-        public void RestoreContactFromCloud()
+        public void RestoreMyContactFromCloud()
         {
             // the response are processed in class ProcessResponsesFromCloud
             Context.CloudManager?.LoadDataFromCloud("String", "MyName"); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
-            Context.CloudManager?.LoadDataFromCloud("", "Avatar"); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
-
+            Context.CloudManager?.LoadDataFromCloud("Avatar", Context.My.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), null, true ); // Cloud.SendCloudCommands.GetObject(Context, "String", "MyName");
             Context.CloudManager?.LoadAllDataFromCloud("Contact"); // Cloud.SendCloudCommands.GetAllObject(Context, "Contact");            
         }
 
@@ -757,7 +756,7 @@ namespace EncryptedMessaging
 
         private Random ParticipantsToRandom(List<ulong> idParticipants)
         {
-            var myId = Context.My.GetId();
+            var myId = Context.My.Id;
             ulong seed = 0;
             foreach (var idParticipant in idParticipants)
             {

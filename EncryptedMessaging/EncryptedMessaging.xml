@@ -787,9 +787,9 @@
             Event action for contact list change.
             </summary>
         </member>
-        <member name="M:EncryptedMessaging.Contacts.RestoreContactFromCloud">
+        <member name="M:EncryptedMessaging.Contacts.RestoreMyContactFromCloud">
             <summary>
-            This Fucktion is used to restore a contact from the cloud storage.
+            This function is used to restore a contact from the cloud storage.
             </summary>
         </member>
         <member name="M:EncryptedMessaging.Contacts.SortContacts(System.Boolean)">
@@ -2096,9 +2096,14 @@
         </member>
         <member name="M:EncryptedMessaging.My.GetId">
             <summary>
-            Get the unisgned long integer User Id from the CSP byte array.
+            My user id (deprecated).
             </summary>
             <returns></returns>
+        </member>
+        <member name="P:EncryptedMessaging.My.Id">
+            <summary>
+            My user id.
+            </summary>
         </member>
         <member name="P:EncryptedMessaging.My.Name">
             <summary>
@@ -2145,11 +2150,12 @@
             </summary>
             <returns></returns>
         </member>
-        <member name="M:EncryptedMessaging.My.SetAvatar(System.Byte[])">
+        <member name="M:EncryptedMessaging.My.SetAvatar(System.Byte[],System.Boolean)">
             <summary>
             Sets the avatar (the image of the user photo in the form of a byte array)
             </summary>
             <param name="png"></param>
+            <param name="saveToCloud">Save the avatar to cloud (if the library use a cloud)</param>
         </member>
         <member name="M:EncryptedMessaging.My.BackupToCloud">
             <summary>

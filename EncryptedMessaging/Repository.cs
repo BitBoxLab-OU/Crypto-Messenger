@@ -31,7 +31,7 @@ namespace EncryptedMessaging
         /// Set maximum post length to 20 MB.
         /// </summary>
         public const int MaxPostLength = 20971520; //20 MegaByte
-        private string ChatPath(ulong chatId) => MapPath(Path.Combine(Context.My.GetId().ToString("X", System.Globalization.CultureInfo.InvariantCulture), Context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
+        private string ChatPath(ulong chatId) => MapPath(Path.Combine(Context.My.Id.ToString("X", System.Globalization.CultureInfo.InvariantCulture), Context.Domain.ToString("X", System.Globalization.CultureInfo.InvariantCulture), chatId.ToString("X", System.Globalization.CultureInfo.InvariantCulture)));
 
         /// <summary>
         /// Add the encrypted post to local storage and return the reception date

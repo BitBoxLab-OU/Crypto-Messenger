@@ -615,7 +615,7 @@ namespace EncryptedMessaging
                 postData = postData.Combine(GetBytes(id));
 
             //usersId.ForEach((id) => postData = postData.Combine(GetBytes(id)));
-            var myId = _context.My.GetId(); ;
+            var myId = _context.My.Id; ;
             byte authorIndex = 0;
             for (byte i = 0; i < usersId.Length; i++)
             {
@@ -690,7 +690,7 @@ namespace EncryptedMessaging
                 else if (idParticipant != null)
                 {
                     // I received a contact to add to the address book
-                    var myId = _context.My.GetId();
+                    var myId = _context.My.Id;
                     positionOfKey = idParticipant.FindIndex(x => x == myId);
                 }
                 else
