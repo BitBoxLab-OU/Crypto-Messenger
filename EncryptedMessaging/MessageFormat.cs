@@ -37,7 +37,7 @@ namespace EncryptedMessaging
             PostId = postId;
             Encrypted = encrypted;
             ChatId = chatId;
-            AuthorId = authorId;
+            _AuthorId = authorId;
             if (type == MessageFormat.MessageType.ReplyToMessage)
             {
                 Type = (MessageFormat.MessageType)data[0];
@@ -62,10 +62,25 @@ namespace EncryptedMessaging
         /// The public key of the author.
         /// </summary>
         public MessageFormat.MessageType Type { get; internal set; }
+        private readonly ulong _AuthorId;
         /// <summary>
         /// The author Id NOTE: This value is setting only in not encrypted message!
         /// </summary>
-        public readonly ulong AuthorId;
+        public ulong AuthorId
+        {
+            get
+            {
+                if (!Encrypted)
+                    return _AuthorId;
+                else
+                {
+                    var author = Context.Contacts.GetParticipant(Author);
+                    if (author == null)
+                        return (uint)author.UserId;
+                }
+                return 0;
+            }
+        }
         /// <summary>
         /// Unique identification number of the chat.
         /// </summary>
@@ -108,8 +123,9 @@ namespace EncryptedMessaging
         {
             //To save memory, the data is eliminated every time the message is rendered on the visual interface
             //For some types of data, it may be necessary to obtain them again even after rendering on the UI, for example the audio files when the user decides to listen to them
+            var savable = MessageFormat.MessageDescription.ContainsKey(Type) && Contact?.IsVisible == true;
             var output = Data;
-            if (output == null)
+            if (output == null && savable)
             {
                 var chatId = Contact.ChatId;
                 var post = Context.Repository.ReadPost(ReceptionTime, chatId);
@@ -123,7 +139,8 @@ namespace EncryptedMessaging
                 if (Context.MessageFormat.ReadDataPost(post, chatId, ReceptionTime, out var message))
                     output = message.Data;
             }
-            Data = null; //flush memory
+            if (savable)
+                Data = null; //flush memory
             return output;
         }
         /// <summary>

@@ -19,7 +19,6 @@ namespace CommunicationChannel
             TimerCheckConnection = new Timer(OnTimerCheckConnection, null, Timeout.Infinite, Timeout.Infinite);
             _timerAutoDisconnect = new Timer(OnTimerAutoDisconnect, null, Timeout.Infinite, Timeout.Infinite);
             TimerKeepAlive = new Timer(OnTimerKeepAlive, null, Timeout.Infinite, Timeout.Infinite);
-            SendTimeOut = new Timer(ExecuteOnSendTimeout, null, Timeout.Infinite, Timeout.Infinite);
         }
         internal readonly Channel Channel;
 
@@ -44,6 +43,7 @@ namespace CommunicationChannel
         private void OnTimerAutoDisconnect(object o) => Disconnect(false);
         private void SuspendAutoDisconnectTimer()
         {
+
             _timerAutoDisconnect.Change(Timeout.Infinite, Timeout.Infinite);
         }
         private DateTime _timerStartedTime = DateTime.MinValue;
@@ -104,14 +104,9 @@ namespace CommunicationChannel
         {
             Channel.Spooler.AddToQuee(data);
         }
-
-        internal readonly Timer SendTimeOut; // Timer used to generate a data send timeout. If the server does not respond within a certain period, we can consider the connection broken
-        private void ExecuteOnSendTimeout(object obj)
-        {
-            if (Logged)
-                Disconnect();
-        }
-        internal List<byte[]> DataAwaitingConfirmation = new List<byte[]>();
+        private const int TimeOutMs = 5000;
+        internal SemaphoreSlim WaitConfirmation;
+        //internal List<byte[]> DataAwaitingConfirmation = new List<byte[]>();
         internal int ToWrite;
         /// <summary>
         /// Send data to server (router) without going through the spooler
@@ -121,75 +116,83 @@ namespace CommunicationChannel
         /// <param name="directlyWithoutSpooler">If true, it indicates to the router (server) that it should not park the data if the receiver is not connected</param>
         internal void ExecuteSendData(byte[] data, Action executeOnConfirmReceipt = null, bool directlyWithoutSpooler = false)
         {
-            var dataLength = data.Length;
+            var dataLength = (uint)data.Length;
+            ToWrite += data.Length;
+            lock (this)
+            {
 #if DEBUG
-            if (!Logged && dataLength > 0 && data[0] != (byte)Protocol.Command.ConnectionEstablished)
-            {
-                Debug.WriteLine(Channel.ServerUri); // Current entry point
-                if (directlyWithoutSpooler)
-                    Debugger.Break(); // Don't send message directly without spooler before authentication on the server!
-                else
-                    Debugger.Break(); // Verify if the server running and if you have internet connection!  (Perhaps there is no server at the current entry point)
-            }
-#endif
-            if (dataLength > _maxDataLength) { Channel.Spooler.OnSendCompleted(data, new Exception("excess data length"), false); return; }
-            ToWrite += dataLength;
-            SuspendAutoDisconnectTimer();
-
-            if (dataLength > 0 && !directlyWithoutSpooler) // The protocol does not provide confirmation for messages that do not use the spooler, because these messages cannot be resubmitted if they do not arrive at their destination
-            {
-                // If you are sending a received message confirmation, then you do not need to start the timer that awaits the confirmation, because the confirmations sent do not generate other confirmations from the server
-                var command = (Protocol.Command)data[0];
-                if (command != Protocol.Command.DataReceivedConfirmation)
+                if (!Logged && dataLength > 0 && data[0] != (byte)Protocol.Command.ConnectionEstablished)
                 {
-                    if (command != Protocol.Command.ConnectionEstablished)
+                    Debug.WriteLine(Channel.ServerUri); // Current entry point
+                    if (directlyWithoutSpooler)
+                        Debugger.Break(); // Don't send message directly without spooler before authentication on the server!
+                    else
+                        Debugger.Break(); // Verify if the server running and if you have internet connection!  (Perhaps there is no server at the current entry point)
+                }
+#endif
+                if (dataLength > _maxDataLength) { Channel.Spooler.OnSendCompleted(data, new Exception("excess data length"), false); return; }
+                SuspendAutoDisconnectTimer();
+                var command = (Protocol.Command)data[0];
+                // var waitConfirmation = !directlyWithoutSpooler && command != Protocol.Command.DataReceivedConfirmation && command != Protocol.Command.ConnectionEstablished;
+                var waitConfirmation = !directlyWithoutSpooler && command != Protocol.Command.DataReceivedConfirmation;
+
+                if (Client == null || !Client.Connected)
+                {
+                    Channel.Spooler.OnSendCompleted(data, new Exception("not connected"), true);
+                }
+                else
+                {
+                    try
                     {
-                        lock (DataAwaitingConfirmation)
+                        lock (Client)
                         {
-                            DataAwaitingConfirmation.Add(data);
+                            var stream = Client.GetStream();
+                            var mask = 0b10000000_00000000_00000000_00000000;
+                            var lastBit = directlyWithoutSpooler ? mask : 0;
+                            stream.Write((dataLength | lastBit).GetBytes(), 0, 4);
+                            var writed = 0;
+                            KeepAliveStop();
+                            WaitConfirmation = waitConfirmation ? new SemaphoreSlim(0, 1) : null;
+                            var timeoutMs = TimeOutMs + data.Length / 50;
+                            stream.WriteTimeout = timeoutMs;
+                            var watch = Stopwatch.StartNew();
+                            stream.Write(data, writed, data.Length - writed);
+                            stream.Flush();
+                            watch.Stop();
+                            var elapsedMs = watch.ElapsedMilliseconds;
+                            if (elapsedMs > 300)
+                            {
+                                Debugger.Break();
+                            }
+                            if (WaitConfirmation == null || WaitConfirmation.Wait(TimeOutMs))
+                            {
+                                // confirmation received                              
+                                if (waitConfirmation)
+                                {
+                                    executeOnConfirmReceipt?.Invoke();
+                                    Channel.Spooler.OnSendCompleted(data, null, false);
+                                }
+                                KeepAliveStart();
+                                ResumeAutoDisconnectTimer();
+                                if (Logged)
+                                    Channel.Spooler.SendNext(); //Upon receipt confirmation, sends the next message
+                                else
+                                    Debugger.Break();
+                            }
+                            else
+                            {
+                                // wait timed out
+                                Channel.Spooler.OnSendCompleted(data, null, true);
+                            }
                         }
                     }
-                    var timeoutMs = 10000 + (ToRead + ToWrite) / 10; //10 seconds of timeout + 1 minute for every megabyte 
-                    SendTimeOut.Change(timeoutMs, Timeout.Infinite);
-                }
-            }
-
-            if (executeOnConfirmReceipt != null)
-            {
-                var dataId = Utility.DataId(data);
-                Channel.Spooler.ExecuteOnConfirmReceipt.Add(Tuple.Create(dataId, executeOnConfirmReceipt));
-            }
-
-            if (Client == null || !Client.Connected)
-            {
-                Channel.Spooler.OnSendCompleted(data, new Exception("not connected"), true);
-            }
-            else
-            {
-                try
-                {
-                    lock (Client)
+                    catch (Exception ex)
                     {
-                        var stream = Client.GetStream();
-                        var mask = 0b10000000_00000000_00000000_00000000;
-                        var lastBit = directlyWithoutSpooler ? mask : 0;
-                        var lengt = (uint)dataLength | lastBit;
-                        stream.Write(lengt.GetBytes(), 0, 4);
-                        var wrided = 0;
-                        KeepAliveStop();
-                        stream.Write(data, wrided, dataLength - wrided);
-                        stream.Flush();
-                        Channel.Spooler.OnSendCompleted(data, null, false);
-                        KeepAliveStart();
+                        Channel.Spooler.OnSendCompleted(data, ex, true);
                     }
                 }
-                catch (Exception ex)
-                {
-                    Channel.Spooler.OnSendCompleted(data, ex, true);
-                }
+                ToWrite -= data.Length;
             }
-            ResumeAutoDisconnectTimer();
-            ToWrite -= dataLength;
         }
 
         /// <summary>
@@ -202,9 +205,8 @@ namespace CommunicationChannel
             lock (this)
             {
                 if (!IsConnected() && Channel.InternetAccess)
-                {
-                    GetPorts(out var ports);
-                    StartLinger(ports, out var exception);
+                {;
+                    StartLinger(443, out var exception);
                     if (exception != null)
                     {
                         Channel.OnTcpError(ErrorType.ConnectionFailure, exception.Message);
@@ -220,33 +222,36 @@ namespace CommunicationChannel
             }
             return false;
         }
+        private SemaphoreSlim OnConnectedSemaphore;
         internal bool Logged;
-
-        private void GetPorts(out List<int> ports)
+        private void OnCennected()
         {
-            if (Client != null)
-                Disconnect();
-            ports = new List<int>
-                    {
-				// WhatsApp port used for outgoing traffic
-#if DEBUG
-				443,
-				//5222,
-#else
-				443,
-#endif
-					};
+            TimerCheckConnection.Change(Timeout.Infinite, Timeout.Infinite); // Stop check if connection is lost
+            ResumeAutoDisconnectTimer();
+            BeginRead(Client);
+            void startSpooler()
+            {
+                Debug.WriteLine("Logged");
+                Logged = true;
+                OnConnectedSemaphore.Release();
+                OnConnectedSemaphore = null;
+            };
+            var data = Channel.CommandsForServer.CreateCommand(Protocol.Command.ConnectionEstablished, null, null, Channel.MyId); // log in
+            OnConnectedSemaphore = new SemaphoreSlim(0, 1);
+            ExecuteSendData(data, startSpooler);
+            OnConnectedSemaphore?.Wait(TimeOutMs);
         }
-        private void StartLinger(List<int> ports, out Exception exception)
+
+        private void StartLinger(int port, out Exception exception)
         {
             exception = null;
-            foreach (var port in ports)
+            try
             {
-                foreach (var address in Dns.GetHostAddresses(Channel.ServerUri.Host).Reverse())
+                var addresses = Dns.GetHostAddresses(Channel.ServerUri.Host).Reverse();
+                foreach (var ip in addresses)
                 {
                     try
                     {
-                        var ip = address;
                         //Client = new TcpClient(ip.ToString(), port)
                         Client = new TcpClient()
                         {
@@ -254,7 +259,7 @@ namespace CommunicationChannel
                         };
 
                         //Client.Connect(ip, port);
-                        if (!Client.ConnectAsync(ip, port).Wait(1000)) // 1000 ms timeout
+                        if (!Client.ConnectAsync(ip, port).Wait(TimeOutMs)) // ms timeout
                         {
                             throw new Exception("Failed to connect");
                         }
@@ -273,24 +278,11 @@ namespace CommunicationChannel
                         exception = ex;
                     }
                 }
-                if (exception == null)
-                    break;
             }
-        }
-
-        private void OnCennected()
-        {
-            ResumeAutoDisconnectTimer();
-            Channel.OnTcpError(ErrorType.Working, "Connection established successfully");
-            BeginRead(Client);
-            void startSpooler()
+            catch (Exception ex)
             {
-                Logged = true;
-                Channel.Spooler.SendNext(); // When the connection is established, it starts the spooler
-            };
-            var data = Channel.CommandsForServer.CreateCommand(Protocol.Command.ConnectionEstablished, null, null, Channel.MyId); // log in
-            ExecuteSendData(data, startSpooler);
-            TimerCheckConnection.Change(Timeout.Infinite, Timeout.Infinite); // Stop check if connection is lost
+                exception = ex;
+            }
         }
 
         private void BeginRead(TcpClient client)
@@ -366,9 +358,9 @@ namespace CommunicationChannel
                 }
                 KeepAliveStart();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Channel.OnTcpError(ErrorType.LostConnection, null);
+                Channel.OnTcpError(ErrorType.LostConnection, ex.Message);
                 ToRead = 0;
                 Disconnect();
                 return;
@@ -432,19 +424,13 @@ namespace CommunicationChannel
                 return;
             lock (this)
             {
+                Debug.WriteLine("Disconnect");
                 if (Client != null) // Do not disconnect again
                 {
                     Logged = false;
                     KeepAliveStop();
                     if (tryConnectAgain)
                         TimerCheckConnection.Change(TimerIntervalCheckConnection, Timeout.Infinite); // restart check if connection is lost
-                    SendTimeOut.Change(Timeout.Infinite, Timeout.Infinite);
-                    lock (DataAwaitingConfirmation)
-                    {
-                        DataAwaitingConfirmation.ForEach(x => Channel.Spooler.Queue.Add(x));
-                        DataAwaitingConfirmation.Clear();
-                    }
-                    Channel.Spooler.ExecuteOnConfirmReceipt.Clear();
                     SuspendAutoDisconnectTimer();
                     if (Client != null)
                     {

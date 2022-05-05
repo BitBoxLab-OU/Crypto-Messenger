@@ -13,12 +13,12 @@ namespace CommunicationChannel
 	{
 		internal Spooler(Channel channell)
 		{
-			_channell = channell;
-			_queueListName = "ql" + _channell.MyId.ToString();
-			_queueName = "q" + _channell.MyId.ToString() + "-";
+			Channel = channell;
+			_queueListName = "ql" + Channel.MyId.ToString();
+			_queueName = "q" + Channel.MyId.ToString() + "-";
 			LoadUnsendedData();
 		}
-		private readonly Channel _channell;
+		private readonly Channel Channel;
 		private string _queueListName;
 		private string _queueName;
 		private const bool _persistentQuee = true;
@@ -120,51 +120,37 @@ namespace CommunicationChannel
 		public void OnSendCompleted(byte[] data, Exception ex, bool connectionIsLost)
 		{
 			if (ex != null)
-				_channell.Tcp.InvokeError(connectionIsLost ? Tcp.ErrorType.LostConnection : Tcp.ErrorType.SendDataError, ex.Message);
+				Channel.Tcp.InvokeError(connectionIsLost ? Tcp.ErrorType.LostConnection : Tcp.ErrorType.SendDataError, ex.Message);
 			if (connectionIsLost)
 			{
 #if DEBUG
 				_sent.Remove(data);
 #endif
 				Queue.Insert(0, data);
-				_channell.Tcp.Disconnect();
+				Channel.Tcp.Disconnect();
 			}
 		}
-		internal List<Tuple<uint, Action>> ExecuteOnConfirmReceipt = new List<Tuple<uint, Action>>();
+		//internal List<Tuple<uint, Action>> ExecuteOnConfirmReceipt = new List<Tuple<uint, Action>>();
 		/// <summary>
 		/// Confirm the receipt status on the sent data before sending the next message
 		/// </summary>
 		/// <param name="dataId"> data ID</param>
 		public void OnConfirmReceipt(uint dataId)
 		{
-			lock (_channell.Tcp.DataAwaitingConfirmation)
-			{
-				_channell.Tcp.DataAwaitingConfirmation.Clear();
-				_channell.Tcp.SendTimeOut.Change(Timeout.Infinite, Timeout.Infinite);
-			}
-			Action action = null;
-			lock (ExecuteOnConfirmReceipt)
-			{
-				var tuple = ExecuteOnConfirmReceipt.Find(x => x.Item1 == dataId);
-				if (tuple != null)
-				{
-					ExecuteOnConfirmReceipt.Remove(tuple);
-					action = tuple.Item2;
-				}
-			}
-			action?.Invoke();
+			var semaphore = Channel.Tcp.WaitConfirmation;
+			Channel.Tcp.WaitConfirmation = null;
 			RemovePersistent(dataId);
-			_channell.OnDataDeliveryConfirm?.Invoke(dataId);
-			SendNext(); //Upon receipt confirmation, sends the next message
+			Channel.OnDataDeliveryConfirm?.Invoke(dataId);
+			semaphore?.Release();
 		}
 #if DEBUG
 		private readonly List<byte[]> _sent = new List<byte[]>();
 #endif
 		internal void SendNext(bool pause = true)
 		{
-			if (_channell.Tcp.Logged)
+			if (Channel.Tcp.Logged)
 			{
-				if (_channell.Tcp.IsConnected() && Queue.Count > 0)
+				if (Channel.Tcp.IsConnected() && Queue.Count > 0)
 				{
 					var data = Queue[0];
 					Queue.RemoveAt(0);
@@ -174,9 +160,9 @@ namespace CommunicationChannel
 						System.Diagnostics.Debugger.Break(); // send duplicate message!!
 					_sent.Add(data);
 #endif
-					if (pause)
-						Thread.Sleep(1000);
-					_channell.Tcp.ExecuteSendData(data);
+					//if (pause)
+					//	Thread.Sleep(1000);
+					Channel.Tcp.ExecuteSendData(data);
 				}
 			}
 		}

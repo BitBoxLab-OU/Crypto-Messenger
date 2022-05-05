@@ -84,7 +84,7 @@ namespace EncryptedMessaging
                     if (!message.Contact.IsBlocked || message.Type == MessageType.ContactStatus)
                     {
                         message.Contact.ExtendSessionTimeout();
-                        if (isViewable || message.Type == MessageType.LastReading)
+                        if ((isViewable || message.Type == MessageType.LastReading) && message.Contact.IsVisible == true)
                         {
                             Context.Repository.AddPost(data, chatId, ref receptionTime);
                             if (isViewable)

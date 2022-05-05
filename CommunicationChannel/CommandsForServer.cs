@@ -20,7 +20,7 @@ namespace CommunicationChannel
 			if (directlyWithoutSpooler)
 				_channell.Tcp.ExecuteSendData(data, directlyWithoutSpooler: directlyWithoutSpooler);  // Send directly without using the spooler
 			else
-				_channell.Tcp.SendData(data);         // Send data using the spooler
+				_channell.Tcp.SendData(data);                                                         // Send data using the spooler
 		}
 
 		internal byte[] CreateCommand(Protocol.Command command, byte[] dataToSend = null, ulong? chatId = null, ulong? myId = null)
